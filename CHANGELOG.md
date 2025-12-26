@@ -1,0 +1,84 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Historical analytics API endpoints
+- Device uptime calculation
+- Network trends analysis
+- Port change history tracking
+
+## [0.2.0] - 2025-12-26
+
+### Added
+- Historical data models (DeviceHistory, NetworkStats)
+- History recording system
+- Statistics analyzer with uptime calculations
+- API endpoints for device history and network statistics:
+  - `GET /api/history/device/{mac}` - Device history
+  - `GET /api/history/network` - Network history
+  - `GET /api/stats/overview` - Statistics overview
+  - `GET /api/stats/trends` - Network trends
+  - `GET /api/stats/uptime/{mac}` - Device uptime
+- Database functions for historical data queries
+- Network growth analysis
+- Most active devices tracking
+
+### Changed
+- Extended database schema with history tables and indices
+
+## [0.1.0] - 2025-12-19
+
+### Added
+- Complete notification system
+- Multi-channel notifications (Console, System, Webhook)
+- Network change detection (new devices, disconnections, port changes)
+- Notification management API:
+  - `GET /api/notifications` - List all notifications
+  - `POST /api/notifications/{id}/read` - Mark as read
+  - `DELETE /api/notifications/{id}` - Delete notification
+  - `GET /api/notifications/config` - Get configuration
+  - `PUT /api/notifications/config` - Update configuration
+- Modern dashboard with notification sidebar
+- Real-time notification updates
+- Rate limiting to prevent notification spam
+- Notification persistence in database
+
+### Changed
+- Enhanced database schema with notifications tables
+- Updated web dashboard with notification UI
+
+## [0.0.1] - 2025-12-03
+
+### Added
+- Initial Go implementation of network scanner
+- Device discovery on local network
+- Port scanning capabilities
+- MAC address vendor lookup
+- Device type identification
+- Web dashboard for visualization
+- SQLite database for device storage
+- API endpoints:
+  - `POST /api/scan-all-ports/{ip}` - Full port scan
+  - `GET /api/scan-progress/{ip}` - Scan progress
+- Automatic network range detection
+- Concurrent scanning for better performance
+
+### Features
+- Network device discovery
+- Port scanning (quick and full)
+- Vendor identification via MAC address
+- Device type detection
+- Web-based dashboard
+- RESTful API
+- Persistent storage
+
+[Unreleased]: https://github.com/gigas/network-scanner-go/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/gigas/network-scanner-go/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/gigas/network-scanner-go/compare/v0.0.1...v0.1.0
+[0.0.1]: https://github.com/gigas/network-scanner-go/releases/tag/v0.0.1
