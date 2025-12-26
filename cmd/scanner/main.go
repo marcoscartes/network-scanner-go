@@ -87,8 +87,13 @@ func main() {
 		}
 	}()
 
+	// Initialize history tracking
+	lastStatsDay := ""
+	lastSnapshotTime := time.Time{}
+
 	// Main scanning loop
 	for {
+		now := time.Now()
 		log.Printf("Starting network scan for %s", *ipRange)
 
 		// Discover devices
@@ -208,18 +213,30 @@ func main() {
 			}
 		}
 
-		// Calculate and save daily statistics (once per day)
-		now := time.Now()
-		if now.Hour() == 0 && now.Minute() < *interval/60 {
-			log.Println("Calculating daily statistics...")
+		// Check for daily stats calculation
+		// Run if it's a new day since last calculation
+		currentDay := now.Format("2006-01-02")
+		if lastStatsDay != currentDay {
+			log.Printf("New day detected (%s). Calculating daily statistics...", currentDay)
 			if _, err := history.CalculateDailyStats(now); err != nil {
 				log.Printf("Failed to calculate daily stats: %v", err)
+			} else {
+				lastStatsDay = currentDay
 			}
 
 			// Clean old history data
 			if err := history.CleanOldHistory(*historyRetentionDays); err != nil {
 				log.Printf("Failed to clean old history: %v", err)
 			}
+		}
+
+		// Record network snapshot periodically (e.g., every hour)
+		if now.Sub(lastSnapshotTime) >= 1*time.Hour {
+			log.Println("Recording hourly network snapshot...")
+			if err := history.RecordNetworkSnapshot(discoveredDevices); err != nil {
+				log.Printf("Failed to record network snapshot: %v", err)
+			}
+			lastSnapshotTime = now
 		}
 
 		log.Printf("Scan complete. Sleeping for %d seconds...", *interval)

@@ -7,13 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-26
+
+### Added
+- **Dashboard**: Integrated Chart.js for visualizing network trends and device distribution.
+- **Scanner**: Automated historical snapshot recording (hourly) and daily statistics aggregation.
+- **UI**: Added "Network Activity" line chart and "Device Types" doughnut chart.
+- **Integration**: Linked scanner main loop with history recording module.
+
+### Changed
+- Optimized historical data collection to prevent database bloat (snapshots limited to hourly).
+- Updated `PROGRESS.md` to reflect Phase 2 completion.
+
 ## [0.2.1] - 2025-12-26
 
 ### Added
 - **Branding**: Added a new professional application icon.
-- **UI**: Integrated favicon into the web dashboard.
-- **Desktop**: Embedded the icon into the Windows executable (`scanner.exe`).
-- **Server**: Added static file serving capabilities for images and assets.
 
 ### Changed
 - Updated dashboard HTML to include favicon link.
@@ -83,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RESTful API
 - Persistent storage
 
-[Unreleased]: https://github.com/marcoscartes/network-scanner-go/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/marcoscartes/network-scanner-go/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/marcoscartes/network-scanner-go/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/marcoscartes/network-scanner-go/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/marcoscartes/network-scanner-go/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gigas/network-scanner-go/compare/v0.0.1...v0.1.0
