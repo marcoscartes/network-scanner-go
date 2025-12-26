@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Network Scanner Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #0d1117;
+        }
+
+        .container {
+            max-width: 1400px;
+        }
+
+        .card {
+            background-color: #161b22;
+            border-color: #30363d;
+        }
+
+        .table-hover tbody tr:hover td,
+        .table-hover tbody tr:hover th {
+            background-color: #21262d;
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #238636;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .badge-metrics {
+            background-color: #1f6feb;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        /* Notifications Sidebar */
+        .notifications-sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background-color: #161b22;
+            border-left: 1px solid #30363d;
+            z-index: 1050;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .notifications-sidebar.show {
+            right: 0;
+        }
+
+        .notifications-header {
+            padding: 1rem;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background-color: #161b22;
+            z-index: 1;
+        }
+
+        .notifications-body {
+            padding: 1rem;
+        }
+
+        .notification-item {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            transition: background-color 0.2s;
+        }
+
+        .notification-item:hover {
+            background-color: #21262d;
+        }
+
+        .notification-item.unread {
+            border-left: 3px solid #1f6feb;
+        }
+
+        .notification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            display: none;
+        }
+
+        .notification-overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="bi bi-hdd-network"></i> Network Scanner (Go)</a>
+            <div class="d-flex align-items-center">
+                <span class="navbar-text me-3">Live Dashboard</span>
+                <button class="btn btn-outline-light position-relative" onclick="toggleNotifications()">
+                    <i class="bi bi-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        id="notificationBadge" style="display: none;">
+                        0
+                    </span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header border-secondary">
+                        <h5 class="card-title mb-0"><i class="bi bi-router"></i> Discovered Devices</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0 align-middle">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>IP Address</th>
+                                        <th>MAC Address</th>
+                                        <th>Vendor</th>
+                                        <th>Type</th>
+                                        <th>Open Ports</th>
+                                        <th>Metrics</th>
+                                        <th>Last Seen</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .devices}}
+                                    {{$ip := .IP}}
+                                    <tr>
+                                        <td><span class="status-dot"></span>Active</td>
+                                        <td class="fw-bold">{{.IP}}</td>
+                                        <td class="font-monospace">{{.MAC}}</td>
+                                        <td>{{.Vendor}}</td>
+                                        <td>
+                                            {{if ne .Type "Unknown"}}
+                                            <span class="badge bg-secondary">{{.Type}}</span>
+                                            {{else}}
+                                            <span class="text-muted">Unknown</span>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{if .OpenPorts}}
+                                            <small class="font-monospace">
+                                                {{range .OpenPorts}}
+                                                <a href="http://{{$ip}}:{{.}}" target="_blank"
+                                                    class="badge bg-success me-1 text-decoration-none">{{.}}</a>
+                                                {{end}}
+                                            </small>
+                                            {{else}}
+                                            <span class="text-muted">-</span>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{if .MetricsURLs}}
+                                            <span class="badge badge-metrics">{{len .MetricsURLs}} Endpoints</span><br>
+                                            <small class="text-muted" style="font-size: 0.75em;">
+                                                {{range .MetricsURLs}}
+                                                <a href="{{.}}" target="_blank"
+                                                    class="link-info text-decoration-none">{{.}}</a><br>
+                                                {{end}}
+                                            </small>
+                                            {{else}}
+                                            <span class="text-muted">-</span>
+                                            {{end}}
+                                        </td>
+                                        <td><small>{{.LastSeen.Format "15:04:05"}}</small></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                onclick="showScanWarning('{{.IP}}')" title="Full port scan (1-65535)">
+                                                <i class="bi bi-plus-circle"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer border-secondary text-muted text-end">
+                        <small>Total Devices: {{len .devices}}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Sidebar -->
+    <div id="notificationsSidebar" class="notifications-sidebar">
+        <div class="notifications-header">
+            <h5><i class="bi bi-bell"></i> Notifications</h5>
+            <button class="btn-close btn-close-white" onclick="toggleNotifications()"></button>
+        </div>
+        <div class="notifications-body" id="notificationsList">
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                <p>No notifications</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="notificationsOverlay" class="notifications-overlay" onclick="toggleNotifications()"></div>
+
+    <!-- Warning Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning"></i> Full Port Scan
+                        Warning</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You are about to perform a full port scan (1-65535) on <strong id="scanTargetIp"></strong>.</p>
+                    <p class="text-warning"><i class="bi bi-clock"></i> This scan may take 2-5 minutes to complete.</p>
+                    <p>Do you want to continue?</p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="startFullScan()">Start Scan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-arrow-repeat spin"></i> Scanning Ports...</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Scanning <strong id="progressIp"></strong></p>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                            role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted">Current Port</small>
+                            <div><strong id="currentPort">0</strong></div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Ports Found</small>
+                            <div><strong id="portsFound" class="text-success">0</strong></div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Elapsed</small>
+                            <div><strong id="elapsedTime">0s</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentScanIp = null;
+        let pollInterval = null;
+        let autoRefreshTimeout = null;
+
+        function scheduleAutoRefresh() {
+            if (autoRefreshTimeout) clearTimeout(autoRefreshTimeout);
+            autoRefreshTimeout = setTimeout(function () {
+                if (!currentScanIp) window.location.reload(1);
+            }, 10000);
+        }
+        scheduleAutoRefresh();
+
+        function showScanWarning(ip) {
+            currentScanIp = ip;
+            document.getElementById('scanTargetIp').textContent = ip;
+            const modal = new bootstrap.Modal(document.getElementById('warningModal'));
+            modal.show();
+        }
+
+        function startFullScan() {
+            const warningModal = bootstrap.Modal.getInstance(document.getElementById('warningModal'));
+            warningModal.hide();
+
+            document.getElementById('progressIp').textContent = currentScanIp;
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBar').textContent = '0%';
+            document.getElementById('currentPort').textContent = '0';
+            document.getElementById('portsFound').textContent = '0';
+            document.getElementById('elapsedTime').textContent = '0s';
+
+            const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+            progressModal.show();
+
+            fetch(`/api/scan-all-ports/${currentScanIp}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        pollProgress();
+                    } else {
+                        alert('Error starting scan: ' + (data.error || 'Unknown error'));
+                        progressModal.hide();
+                        currentScanIp = null;
+                    }
+                })
+                .catch(error => {
+                    alert('Error starting scan: ' + error);
+                    progressModal.hide();
+                    currentScanIp = null;
+                });
+        }
+
+        function pollProgress() {
+            if (!currentScanIp) return;
+
+            pollInterval = setInterval(() => {
+                fetch(`/api/scan-progress/${currentScanIp}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const progress = data.progress || 0;
+                        document.getElementById('progressBar').style.width = progress + '%';
+                        document.getElementById('progressBar').textContent = progress + '%';
+                        document.getElementById('currentPort').textContent = data.current_port || 0;
+                        document.getElementById('portsFound').textContent = data.ports_found || 0;
+
+                        const elapsed = Math.floor(data.elapsed_time || 0);
+                        const minutes = Math.floor(elapsed / 60);
+                        const seconds = elapsed % 60;
+                        document.getElementById('elapsedTime').textContent =
+                            minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+                        if (data.status === 'complete') {
+                            clearInterval(pollInterval);
+                            showCompletionAndUpdate(data);
+                        } else if (data.status === 'error') {
+                            clearInterval(pollInterval);
+                            alert('Scan error: ' + (data.error || 'Unknown error'));
+                            const progressModal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+                            progressModal.hide();
+                            currentScanIp = null;
+                            scheduleAutoRefresh();
+                        }
+                    })
+                    .catch(error => console.error('Error polling progress:', error));
+            }, 500);
+        }
+
+        function showCompletionAndUpdate(data) {
+            const progressModal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+            progressModal.hide();
+
+            const portsFound = data.ports_found || 0;
+            alert(`✓ Scan complete!\\n\\nFound ${portsFound} open port(s) on ${currentScanIp}`);
+
+            window.location.reload();
+        }
+
+        // Notifications functionality
+        let notificationsOpen = false;
+
+        function toggleNotifications() {
+            const sidebar = document.getElementById('notificationsSidebar');
+            const overlay = document.getElementById('notificationsOverlay');
+
+            notificationsOpen = !notificationsOpen;
+
+            if (notificationsOpen) {
+                sidebar.classList.add('show');
+                overlay.classList.add('show');
+                loadNotifications();
+            } else {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+        }
+
+        function loadNotifications() {
+            fetch('/api/notifications')
+                .then(response => response.json())
+                .then(notifications => {
+                    renderNotifications(notifications);
+                    updateNotificationBadge(notifications);
+                })
+                .catch(error => console.error('Error loading notifications:', error));
+        }
+
+        function renderNotifications(notifications) {
+            const container = document.getElementById('notificationsList');
+
+            if (!notifications || notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                        <p>No notifications</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notifications.map(notification => {
+                const severityIcons = {
+                    'info': 'bi-info-circle text-info',
+                    'warning': 'bi-exclamation-triangle text-warning',
+                    'critical': 'bi-exclamation-octagon text-danger'
+                };
+
+                const icon = severityIcons[notification.severity] || 'bi-bell text-secondary';
+                const unreadClass = notification.read ? '' : 'unread';
+                const timestamp = new Date(notification.timestamp).toLocaleString();
+
+                return `
+                    <div class="notification-item ${unreadClass}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi ${icon} me-2"></i>
+                                <strong>${notification.type.replace('_', ' ').toUpperCase()}</strong>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                ${!notification.read ? `
+                                    <button class="btn btn-outline-primary btn-sm" onclick="markAsRead(${notification.id})" title="Mark as read">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                ` : ''}
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteNotification(${notification.id})" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="mb-1 small">${notification.message}</p>
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> ${timestamp}
+                            ${notification.device_ip ? ` | <i class="bi bi-router"></i> ${notification.device_ip}` : ''}
+                        </small>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateNotificationBadge(notifications) {
+            const badge = document.getElementById('notificationBadge');
+            const unreadCount = notifications.filter(n => !n.read).length;
+
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function markAsRead(id) {
+            fetch(`/api/notifications/${id}/read`, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => {
+                    loadNotifications();
+                })
+                .catch(error => console.error('Error marking notification as read:', error));
+        }
+
+        function deleteNotification(id) {
+            if (confirm('Are you sure you want to delete this notification?')) {
+                fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(() => {
+                        loadNotifications();
+                    })
+                    .catch(error => console.error('Error deleting notification:', error));
+            }
+        }
+
+        // Load notifications on page load
+        loadNotifications();
+
+        // Refresh notifications every 30 seconds
+        setInterval(loadNotifications, 30000);
+    </script>
+</body>
+
+</html>
