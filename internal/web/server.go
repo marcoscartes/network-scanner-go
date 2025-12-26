@@ -1,7 +1,7 @@
 package web
 
 import (
-	_ "embed"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -18,6 +18,9 @@ import (
 
 //go:embed templates/index.html
 var indexHTML string
+
+//go:embed static
+var staticFS embed.FS
 
 var (
 	scanState = make(map[string]*database.ScanProgress)
@@ -44,6 +47,10 @@ func NewServer(port string) *Server {
 // setupRoutes configures the HTTP routes
 func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/", s.handleIndex).Methods("GET")
+
+	// Static files
+	s.router.PathPrefix("/static/").Handler(http.FileServer(http.FS(staticFS)))
+
 	s.router.HandleFunc("/api/scan-all-ports/{ip}", s.handleScanAllPorts).Methods("POST")
 	s.router.HandleFunc("/api/scan-progress/{ip}", s.handleScanProgress).Methods("GET")
 

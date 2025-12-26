@@ -7,11 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-12-26
+
 ### Added
-- Historical analytics API endpoints
-- Device uptime calculation
-- Network trends analysis
-- Port change history tracking
+- **Branding**: Added a new professional application icon.
+- **UI**: Integrated favicon into the web dashboard.
+- **Desktop**: Embedded the icon into the Windows executable (`scanner.exe`).
+- **Server**: Added static file serving capabilities for images and assets.
+
+### Changed
+- Updated dashboard HTML to include favicon link.
 
 ## [0.2.0] - 2025-12-26
 
@@ -78,7 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RESTful API
 - Persistent storage
 
-[Unreleased]: https://github.com/gigas/network-scanner-go/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/gigas/network-scanner-go/compare/v0.1.0...v0.2.0
+[Unreleased]: https://github.com/marcoscartes/network-scanner-go/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/marcoscartes/network-scanner-go/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/marcoscartes/network-scanner-go/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gigas/network-scanner-go/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/gigas/network-scanner-go/releases/tag/v0.0.1
