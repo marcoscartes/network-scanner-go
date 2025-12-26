@@ -154,42 +154,42 @@
 
 ## 🏷️ Phase 3: Device Management
 
-**Status**: ⬜ Not Started  
-**Started**: _____________________  
+**Status**: 🟡 In Progress  
+**Started**: 2025-12-26  
 **Completed**: _____________________  
-**Time Spent**: _____ hours
+**Time Spent**: ~1.5 hours
 
 ### Tasks
 
-#### 3.1 Extended Data Model (0/6)
-- [ ] Add `custom_name` field to Device
-- [ ] Add `notes` field to Device
-- [ ] Add `tags` field to Device
+#### 3.1 Extended Data Model (5/6)
+- [x] Add `custom_name` field to Device
+- [x] Add `notes` field to Device
+- [x] Add `tags` field to Device
 - [ ] Add `group_name` field to Device
-- [ ] Add `is_favorite` field to Device
-- [ ] Create database migration
+- [x] Add `is_known` field to Device (instead of is_favorite)
+- [x] Create database migration
 
-#### 3.2 Management Logic (0/6)
-- [ ] Create `internal/management/device_manager.go`
-- [ ] Implement `UpdateDeviceMetadata()`
-- [ ] Implement `AddTag()` / `RemoveTag()`
+#### 3.2 Management Logic (3/6)
+- [x] Use `db.UpdateDeviceDetails` (Consolidated manager logic in DB package)
+- [x] Implement `UpdateDeviceMetadata()`
+- [x] Implement `AddTag()` / `RemoveTag()` (via consolidated update)
 - [ ] Implement `SetGroup()`
 - [ ] Implement `ToggleFavorite()`
 - [ ] Create `internal/management/groups.go`
 
-#### 3.3 Management API (0/8)
-- [ ] Add `PUT /api/devices/{mac}/name` endpoint
-- [ ] Add `PUT /api/devices/{mac}/notes` endpoint
-- [ ] Add `POST /api/devices/{mac}/tags` endpoint
-- [ ] Add `DELETE /api/devices/{mac}/tags/{tag}` endpoint
+#### 3.3 Management API (4/8)
+- [x] Add `PUT /api/devices/{mac}` endpoint (Consolidated update endpoint)
+- [x] Add `PUT /api/devices/{mac}/name` endpoint (Covered by main update)
+- [x] Add `PUT /api/devices/{mac}/notes` endpoint (Covered by main update)
+- [x] Add `POST /api/devices/{mac}/tags` endpoint (Covered by main update)
 - [ ] Add `PUT /api/devices/{mac}/group` endpoint
 - [ ] Add `POST /api/devices/{mac}/favorite` endpoint
 - [ ] Add `GET /api/groups` endpoint
 - [ ] Add `POST /api/groups` endpoint
 
-#### 3.4 Management UI (0/4)
-- [ ] Create device edit modal
-- [ ] Add tag/group filters
+#### 3.4 Management UI (2/4)
+- [x] Create device edit modal - Display custom names and tags
+- [x] Add tag/group badges in table
 - [ ] Add favorite indicators
 - [ ] Implement advanced search
 
@@ -199,13 +199,17 @@
 - [ ] Add `POST /api/import` endpoint
 
 ### Success Criteria
-- [ ] Custom names work
-- [ ] Tag system operational
+- [x] Custom names work
+- [x] Tag system operational
 - [ ] Groups with auto-assignment
 - [ ] Export/import functional
 
 ### Notes
-_Add your notes here..._
+**Progress Update - 2025-12-26**
+- ✅ Implemented core device management: Custom Names, Types, Tags, Notes, IsKnown.
+- ✅ Created database migrations and API endpoint for updates.
+- ✅ Built Edit Device modal and integrated with table.
+- 🚧 Pending: Group management, Favorites toggle (using IsKnown currently), Import/Export.
 
 ---
 

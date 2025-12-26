@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-26
+
+### Added
+- **Device Management System**: Complete functionality to manage device details (Custom Name, Type, Tags, Notes, Trusted status).
+- **Interactive UI**: New Edit Device modal and improved dashboard table displaying custom metadata.
+- **Dashboard Controls**: Added navbar controls for Auto-Refresh toggle and interval selection (persisted key).
+- **Smart Refresh**: Prevents page reload while user is interacting with modals.
+- **Notification Management**: Added "Mark All Read" & "Clear All" buttons; automatic cleanup of old notifications.
+- **CLI Flags**: Added `-notification-retention` flag (default: 7 days).
+
+### Changed
+- **Database**: Automatic schema migration for new columns (`custom_name`, `tags`, etc.).
+- **API**: New endpoints for `PUT /api/devices/{mac}` and bulk notification actions.
+
+### Fixed
+- Fixed UI refresh logic to be less intrusive during user interaction.
+
 ## [0.3.0] - 2025-12-26
 
 ### Added
@@ -92,7 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RESTful API
 - Persistent storage
 
-[Unreleased]: https://github.com/marcoscartes/network-scanner-go/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/marcoscartes/network-scanner-go/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/marcoscartes/network-scanner-go/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/marcoscartes/network-scanner-go/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/marcoscartes/network-scanner-go/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/marcoscartes/network-scanner-go/compare/v0.1.0...v0.2.0

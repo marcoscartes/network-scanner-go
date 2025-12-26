@@ -7,11 +7,17 @@ type Device struct {
 	ID          int       `json:"id"`
 	MAC         string    `json:"mac"`
 	IP          string    `json:"ip"`
+	CustomName  string    `json:"custom_name"` // User-assigned name
 	Vendor      string    `json:"vendor"`
-	Type        string    `json:"type"`
+	Type        string    `json:"type"`        // Auto-detected type
+	CustomType  string    `json:"custom_type"` // User-assigned type
+	IsKnown     bool      `json:"is_known"`    // Trusted/Known device
+	Tags        []string  `json:"tags"`        // User tags
+	Notes       string    `json:"notes"`
 	OpenPorts   []int     `json:"open_ports"`
 	MetricsURLs []string  `json:"metrics_urls"`
 	LastSeen    time.Time `json:"last_seen"`
+	FirstSeen   time.Time `json:"first_seen"`
 }
 
 // ScanProgress tracks the progress of a port scan

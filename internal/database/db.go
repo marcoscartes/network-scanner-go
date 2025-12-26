@@ -33,11 +33,17 @@ func Init(dbPath string) error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			mac TEXT UNIQUE NOT NULL,
 			ip TEXT NOT NULL,
+			custom_name TEXT,
 			vendor TEXT,
 			type TEXT,
+			custom_type TEXT,
+			is_known INTEGER DEFAULT 0,
+			tags TEXT,
+			notes TEXT,
 			open_ports TEXT,
 			metrics_urls TEXT,
-			last_seen INTEGER NOT NULL
+			last_seen INTEGER NOT NULL,
+			first_seen INTEGER DEFAULT 0
 		);
 
 		CREATE TABLE IF NOT EXISTS vendor_cache (
@@ -101,6 +107,25 @@ func Init(dbPath string) error {
 		return fmt.Errorf("failed to create tables: %w", err)
 	}
 
+	// Migrate schema for existing tables
+	migrations := []string{
+		"ALTER TABLE devices ADD COLUMN custom_name TEXT",
+		"ALTER TABLE devices ADD COLUMN custom_type TEXT",
+		"ALTER TABLE devices ADD COLUMN tags TEXT",
+		"ALTER TABLE devices ADD COLUMN notes TEXT",
+		"ALTER TABLE devices ADD COLUMN is_known INTEGER DEFAULT 0",
+		"ALTER TABLE devices ADD COLUMN first_seen INTEGER DEFAULT 0",
+	}
+
+	for _, query := range migrations {
+		if _, err := db.Exec(query); err == nil {
+			log.Printf("Applied migration: %s", query)
+		}
+	}
+
+	// Backfill first_seen
+	db.Exec("UPDATE devices SET first_seen = last_seen WHERE first_seen = 0 OR first_seen IS NULL")
+
 	log.Println("Database initialized successfully")
 	return nil
 }
@@ -113,9 +138,11 @@ func UpsertDevice(device *Device) error {
 	openPortsJSON, _ := json.Marshal(device.OpenPorts)
 	metricsURLsJSON, _ := json.Marshal(device.MetricsURLs)
 
+	// For new devices, first_seen should be set to last_seen/now
+	// For existing devices, we do NOT update custom fields
 	_, err := db.Exec(`
-		INSERT INTO devices (mac, ip, vendor, type, open_ports, metrics_urls, last_seen)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO devices (mac, ip, vendor, type, open_ports, metrics_urls, last_seen, first_seen)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(mac) DO UPDATE SET
 			ip = excluded.ip,
 			vendor = excluded.vendor,
@@ -124,7 +151,7 @@ func UpsertDevice(device *Device) error {
 			metrics_urls = excluded.metrics_urls,
 			last_seen = excluded.last_seen
 	`, device.MAC, device.IP, device.Vendor, device.Type,
-		string(openPortsJSON), string(metricsURLsJSON), device.LastSeen.Unix())
+		string(openPortsJSON), string(metricsURLsJSON), device.LastSeen.Unix(), device.LastSeen.Unix())
 
 	return err
 }
@@ -132,7 +159,7 @@ func UpsertDevice(device *Device) error {
 // GetAllDevices retrieves all devices from the database
 func GetAllDevices() ([]*Device, error) {
 	rows, err := db.Query(`
-		SELECT id, mac, ip, vendor, type, open_ports, metrics_urls, last_seen
+		SELECT id, mac, ip, custom_name, vendor, type, custom_type, is_known, tags, notes, open_ports, metrics_urls, last_seen, first_seen
 		FROM devices
 		ORDER BY last_seen DESC
 	`)
@@ -145,22 +172,68 @@ func GetAllDevices() ([]*Device, error) {
 	for rows.Next() {
 		var device Device
 		var openPortsJSON, metricsURLsJSON string
+		var tagsJSON sql.NullString
+		var customName, customType, notes sql.NullString
 		var lastSeenUnix int64
+		var firstSeenUnix sql.NullInt64
 
-		err := rows.Scan(&device.ID, &device.MAC, &device.IP, &device.Vendor,
-			&device.Type, &openPortsJSON, &metricsURLsJSON, &lastSeenUnix)
+		err := rows.Scan(&device.ID, &device.MAC, &device.IP, &customName, &device.Vendor,
+			&device.Type, &customType, &device.IsKnown, &tagsJSON, &notes, &openPortsJSON, &metricsURLsJSON, &lastSeenUnix, &firstSeenUnix)
 		if err != nil {
 			continue
+		}
+
+		if customName.Valid {
+			device.CustomName = customName.String
+		}
+		if customType.Valid {
+			device.CustomType = customType.String
+		}
+		if notes.Valid {
+			device.Notes = notes.String
+		}
+		if tagsJSON.Valid {
+			json.Unmarshal([]byte(tagsJSON.String), &device.Tags)
 		}
 
 		json.Unmarshal([]byte(openPortsJSON), &device.OpenPorts)
 		json.Unmarshal([]byte(metricsURLsJSON), &device.MetricsURLs)
 		device.LastSeen = time.Unix(lastSeenUnix, 0)
+		if firstSeenUnix.Valid {
+			device.FirstSeen = time.Unix(firstSeenUnix.Int64, 0)
+		} else {
+			device.FirstSeen = device.LastSeen // Fallback
+		}
 
 		devices = append(devices, &device)
 	}
 
 	return devices, nil
+}
+
+// UpdateDeviceDetails updates the user-configurable details of a device
+func UpdateDeviceDetails(mac string, customName string, customType string, isKnown bool, tags []string, notes string) error {
+	dbMu.Lock()
+	defer dbMu.Unlock()
+
+	tagsJSON, _ := json.Marshal(tags)
+
+	result, err := db.Exec(`
+		UPDATE devices 
+		SET custom_name = ?, custom_type = ?, is_known = ?, tags = ?, notes = ?
+		WHERE mac = ?
+	`, customName, customType, isKnown, string(tagsJSON), notes, mac)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("device not found")
+	}
+
+	return nil
 }
 
 // GetCachedVendor retrieves a cached vendor lookup
@@ -295,6 +368,32 @@ func DeleteNotification(id int) error {
 	defer dbMu.Unlock()
 
 	_, err := db.Exec("DELETE FROM notifications WHERE id = ?", id)
+	return err
+}
+
+// MarkAllNotificationsAsRead marks all notifications as read
+func MarkAllNotificationsAsRead() error {
+	dbMu.Lock()
+	defer dbMu.Unlock()
+	_, err := db.Exec("UPDATE notifications SET read = 1 WHERE read = 0")
+	return err
+}
+
+// DeleteAllNotifications deletes all notifications
+func DeleteAllNotifications() error {
+	dbMu.Lock()
+	defer dbMu.Unlock()
+	_, err := db.Exec("DELETE FROM notifications")
+	return err
+}
+
+// DeleteOldNotifications deletes notifications older than N days
+func DeleteOldNotifications(days int) error {
+	dbMu.Lock()
+	defer dbMu.Unlock()
+
+	cutoff := time.Now().AddDate(0, 0, -days).Unix()
+	_, err := db.Exec("DELETE FROM notifications WHERE timestamp < ?", cutoff)
 	return err
 }
 

@@ -47,6 +47,7 @@ func NewServer(port string) *Server {
 // setupRoutes configures the HTTP routes
 func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/", s.handleIndex).Methods("GET")
+	s.router.HandleFunc("/api/devices/{mac}", s.handleUpdateDevice).Methods("PUT")
 
 	// Static files
 	s.router.PathPrefix("/static/").Handler(http.FileServer(http.FS(staticFS)))
@@ -56,6 +57,8 @@ func (s *Server) setupRoutes() {
 
 	// Notification endpoints
 	s.router.HandleFunc("/api/notifications", s.handleGetNotifications).Methods("GET")
+	s.router.HandleFunc("/api/notifications/read-all", s.handleMarkAllNotificationsRead).Methods("POST")
+	s.router.HandleFunc("/api/notifications/all", s.handleDeleteAllNotifications).Methods("DELETE")
 	s.router.HandleFunc("/api/notifications/{id}/read", s.handleMarkNotificationRead).Methods("POST")
 	s.router.HandleFunc("/api/notifications/{id}", s.handleDeleteNotification).Methods("DELETE")
 	s.router.HandleFunc("/api/notifications/config", s.handleGetNotificationConfig).Methods("GET")
@@ -421,4 +424,51 @@ func (s *Server) handleGetDeviceUptime(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// handleUpdateDevice updates device details
+func (s *Server) handleUpdateDevice(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	mac := vars["mac"]
+
+	var req struct {
+		CustomName string   `json:"custom_name"`
+		CustomType string   `json:"custom_type"`
+		IsKnown    bool     `json:"is_known"`
+		Tags       []string `json:"tags"`
+		Notes      string   `json:"notes"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := database.UpdateDeviceDetails(mac, req.CustomName, req.CustomType, req.IsKnown, req.Tags, req.Notes); err != nil {
+		http.Error(w, "Failed to update device: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// handleMarkAllNotificationsRead marks all notifications as read
+func (s *Server) handleMarkAllNotificationsRead(w http.ResponseWriter, r *http.Request) {
+	if err := database.MarkAllNotificationsAsRead(); err != nil {
+		http.Error(w, "Failed to mark all as read", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// handleDeleteAllNotifications deletes all notifications
+func (s *Server) handleDeleteAllNotifications(w http.ResponseWriter, r *http.Request) {
+	if err := database.DeleteAllNotifications(); err != nil {
+		http.Error(w, "Failed to delete all notifications", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }

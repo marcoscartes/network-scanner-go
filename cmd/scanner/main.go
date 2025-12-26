@@ -24,6 +24,7 @@ func main() {
 	notifyDisconnected := flag.Bool("notify-disconnected", true, "Notify when devices disconnect")
 	notifyPortChanges := flag.Bool("notify-port-changes", true, "Notify when port changes are detected")
 	webhookURL := flag.String("webhook-url", "", "Webhook URL for notifications")
+	notificationRetentionDays := flag.Int("notification-retention", 7, "Days to retain notifications")
 
 	// History flags
 	historyRetentionDays := flag.Int("history-retention-days", 90, "Number of days to retain historical data")
@@ -227,6 +228,11 @@ func main() {
 			// Clean old history data
 			if err := history.CleanOldHistory(*historyRetentionDays); err != nil {
 				log.Printf("Failed to clean old history: %v", err)
+			}
+
+			// Clean old notifications
+			if err := database.DeleteOldNotifications(*notificationRetentionDays); err != nil {
+				log.Printf("Failed to clean old notifications: %v", err)
 			}
 		}
 
