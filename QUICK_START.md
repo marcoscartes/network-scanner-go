@@ -1,7 +1,7 @@
 # 📋 Network Scanner - Quick Start Guide
 
 **Fecha**: 2025-12-19  
-**Versión**: 0.6.0  
+**Versión**: 1.2.0  
 **Estado**: Proyecto Finalizado - Producción
 
 ---
