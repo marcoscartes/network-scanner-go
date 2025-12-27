@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"network-scanner-go/internal/database"
 	"network-scanner-go/internal/scanner"
+	"network-scanner-go/internal/search"
+	"network-scanner-go/internal/security"
 	"sort"
 	"sync"
 	"time"
@@ -29,16 +31,22 @@ var (
 
 // Server represents the web server
 type Server struct {
-	router *mux.Router
-	port   string
+	router    *mux.Router
+	port      string
+	wsManager *WSManager
 }
 
 // NewServer creates a new web server
 func NewServer(port string) *Server {
 	s := &Server{
-		router: mux.NewRouter(),
-		port:   port,
+		router:    mux.NewRouter(),
+		port:      port,
+		wsManager: NewWSManager(),
 	}
+
+	go s.wsManager.Run()
+	// Load security rules
+	security.LoadRules(security.GetDefaultRulesPath())
 
 	s.setupRoutes()
 	return s
@@ -47,7 +55,9 @@ func NewServer(port string) *Server {
 // setupRoutes configures the HTTP routes
 func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/", s.handleIndex).Methods("GET")
+	s.router.HandleFunc("/api/devices", s.handleSearch).Methods("GET")
 	s.router.HandleFunc("/api/devices/{mac}", s.handleUpdateDevice).Methods("PUT")
+	s.router.HandleFunc("/api/devices/{mac}/check-vulnerabilities", s.handleCheckVulnerabilities).Methods("POST")
 
 	// Static files
 	s.router.PathPrefix("/static/").Handler(http.FileServer(http.FS(staticFS)))
@@ -70,6 +80,9 @@ func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/api/stats/overview", s.handleGetStatsOverview).Methods("GET")
 	s.router.HandleFunc("/api/stats/trends", s.handleGetNetworkTrends).Methods("GET")
 	s.router.HandleFunc("/api/stats/uptime/{mac}", s.handleGetDeviceUptime).Methods("GET")
+
+	// WebSocket endpoint
+	s.router.HandleFunc("/ws", s.wsManager.HandleConnections)
 }
 
 // handleIndex renders the dashboard
@@ -80,26 +93,120 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	searchQuery := r.URL.Query().Get("q")
+	if searchQuery != "" {
+		q := search.Parse(searchQuery)
+		devices = q.Filter(devices)
+	}
+
 	// Sort by IP address
 	sort.Slice(devices, func(i, j int) bool {
 		return devices[i].IP < devices[j].IP
 	})
 
-	tmpl, err := template.New("index").Parse(indexHTML)
+	funcMap := template.FuncMap{
+		"json": func(v interface{}) string {
+			b, _ := json.Marshal(v)
+			return string(b)
+		},
+		"add": func(a, b int) int {
+			return a + b
+		},
+	}
+
+	tmpl, err := template.New("index").Funcs(funcMap).Parse(indexHTML)
 	if err != nil {
 		log.Printf("Template parse error: %v", err)
 		http.Error(w, "Failed to load template", http.StatusInternalServerError)
 		return
 	}
 
+	// Calculate stats
+	totalDevices := len(devices)
+	activeDevices := 0
+	knownDevices := 0
+	unknownDevices := 0
+	criticalRisks := 0
+	totalSecurityScore := 0.0
+	now := time.Now()
+	oneDayAgo := now.Add(-24 * time.Hour)
+
+	for _, d := range devices {
+		if d.LastSeen.After(oneDayAgo) {
+			activeDevices++
+		}
+		if d.IsKnown {
+			knownDevices++
+		} else {
+			unknownDevices++
+		}
+
+		// Security stats
+		deviceScore := 100.0
+		for _, v := range d.Vulnerabilities {
+			if v.Severity == "critical" || v.Severity == "high" {
+				criticalRisks++
+			}
+			switch v.Severity {
+			case "critical":
+				deviceScore -= 60
+			case "high":
+				deviceScore -= 40
+			case "medium":
+				deviceScore -= 20
+			case "low":
+				deviceScore -= 10
+			}
+		}
+		if deviceScore < 0 {
+			deviceScore = 0
+		}
+		totalSecurityScore += deviceScore
+	}
+
+	networkSecurityScore := 100
+	if totalDevices > 0 {
+		networkSecurityScore = int(totalSecurityScore / float64(totalDevices))
+	}
+
 	data := map[string]interface{}{
-		"devices": devices,
+		"devices":              devices,
+		"query":                searchQuery,
+		"totalDevices":         totalDevices,
+		"activeDevices":        activeDevices,
+		"knownDevices":         knownDevices,
+		"unknownDevices":       unknownDevices,
+		"criticalRisks":        criticalRisks,
+		"networkSecurityScore": networkSecurityScore,
 	}
 
 	err = tmpl.Execute(w, data)
 	if err != nil {
 		log.Printf("Template execute error: %v", err)
 	}
+}
+
+// handleSearch returns a filtered list of devices in JSON format
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	devices, err := database.GetAllDevices()
+	if err != nil {
+		http.Error(w, "Failed to load devices", http.StatusInternalServerError)
+		return
+	}
+
+	searchQuery := r.URL.Query().Get("q")
+	if searchQuery != "" {
+		q := search.Parse(searchQuery)
+		devices = q.Filter(devices)
+	}
+
+	// Sort by IP address
+	sort.Slice(devices, func(i, j int) bool {
+		return devices[i].IP < devices[j].IP
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(devices)
 }
 
 // handleScanAllPorts initiates a full port scan
@@ -139,6 +246,12 @@ func (s *Server) handleScanAllPorts(w http.ResponseWriter, r *http.Request) {
 				state.CurrentPort = current
 				state.OpenPorts = ports
 				state.PortsFound = len(ports)
+
+				s.Broadcast(map[string]interface{}{
+					"type": "scan_progress",
+					"ip":   ip,
+					"data": state,
+				})
 			}
 			stateMu.Unlock()
 		})
@@ -152,15 +265,44 @@ func (s *Server) handleScanAllPorts(w http.ResponseWriter, r *http.Request) {
 			state.EndTime = &now
 			state.OpenPorts = openPorts
 			state.PortsFound = len(openPorts)
+
+			s.Broadcast(map[string]interface{}{
+				"type": "scan_complete",
+				"ip":   ip,
+				"data": state,
+			})
 		}
 		stateMu.Unlock()
 
-		// Update database
+		// Update database and check vulnerabilities
 		devices, _ := database.GetAllDevices()
 		for _, device := range devices {
 			if device.IP == ip {
 				device.OpenPorts = openPorts
+
+				// Check for vulnerabilities
+				device.Vulnerabilities = security.CheckDevice(openPorts, device.Type)
+
 				database.UpsertDevice(device)
+
+				// Notify if critical vulnerabilities found
+				for _, v := range device.Vulnerabilities {
+					if v.Severity == "critical" || v.Severity == "high" {
+						database.SaveNotification(&database.Notification{
+							Type:      "security_alert",
+							DeviceIP:  device.IP,
+							DeviceMAC: device.MAC,
+							Message:   fmt.Sprintf("Security Risk: %s detected on %s", v.Name, v.Severity),
+							Timestamp: time.Now(),
+							Read:      false,
+							Severity:  v.Severity,
+						})
+						s.Broadcast(map[string]interface{}{
+							"type": "notification_alert", // Special type for security
+							"data": v,
+						})
+					}
+				}
 				break
 			}
 		}
@@ -207,6 +349,11 @@ func (s *Server) handleScanProgress(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Start() error {
 	log.Printf("Starting web server on port %s\n", s.port)
 	return http.ListenAndServe(":"+s.port, s.router)
+}
+
+// Broadcast sends a message to all connected WebSocket clients
+func (s *Server) Broadcast(msg interface{}) {
+	s.wsManager.Broadcast(msg)
 }
 
 // handleGetNotifications returns all notifications
@@ -471,4 +618,60 @@ func (s *Server) handleDeleteAllNotifications(w http.ResponseWriter, r *http.Req
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// handleCheckVulnerabilities performs a vulnerability check on a specific device
+func (s *Server) handleCheckVulnerabilities(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	mac := vars["mac"]
+
+	devices, err := database.GetAllDevices()
+	if err != nil {
+		http.Error(w, "Failed to load devices", http.StatusInternalServerError)
+		return
+	}
+
+	var targetDevice *database.Device
+	for _, d := range devices {
+		if d.MAC == mac {
+			targetDevice = d
+			break
+		}
+	}
+
+	if targetDevice == nil {
+		http.Error(w, "Device not found", http.StatusNotFound)
+		return
+	}
+
+	// Run vulnerability check
+	vulns := security.CheckDevice(targetDevice.OpenPorts, targetDevice.Type)
+	targetDevice.Vulnerabilities = vulns
+
+	// Save back to database
+	if err := database.UpsertDevice(targetDevice); err != nil {
+		http.Error(w, "Failed to update device vulnerabilities", http.StatusInternalServerError)
+		return
+	}
+
+	// Notify if critical vulnerabilities found
+	for _, v := range vulns {
+		if v.Severity == "critical" || v.Severity == "high" {
+			database.SaveNotification(&database.Notification{
+				Type:      "security_alert",
+				DeviceIP:  targetDevice.IP,
+				DeviceMAC: targetDevice.MAC,
+				Message:   fmt.Sprintf("Security Risk: %s detected on %s", v.Name, v.Severity),
+				Timestamp: time.Now(),
+				Read:      false,
+				Severity:  v.Severity,
+			})
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":          "success",
+		"vulnerabilities": vulns,
+	})
 }

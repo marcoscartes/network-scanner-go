@@ -10,8 +10,35 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --primary-color: #1f6feb;
+            --accent-color: #58a6ff;
+            --success-color: #238636;
+            --warning-color: #d29922;
+            --danger-color: #f85149;
+        }
+
+        [data-bs-theme="light"] {
+            --bg-color: #f6f8fa;
+            --card-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --text-muted: #57606a;
+            --primary-color: #0969da;
+            --accent-color: #0969da;
+            --success-color: #1a7f37;
+            --warning-color: #9a6700;
+            --danger-color: #cf222e;
+        }
+
         body {
-            background-color: #0d1117;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
 
         .container {
@@ -41,14 +68,74 @@
             background-color: #1f6feb;
         }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b949e;
+        }
+
+        #deviceSearch {
+            padding-left: 45px;
+            background-color: #0d1117;
+            border-color: #30363d;
+            color: #c9d1d9;
+            border-radius: 25px;
+            transition: all 0.2s ease;
+        }
+
+        #deviceSearch:focus {
+            background-color: #161b22;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.25);
+            outline: none;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            color: #8b949e;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .clear-search:hover {
+            color: #c9d1d9;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
             }
 
-            100% {
-                transform: rotate(360deg);
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
+        }
+
+        .status-dot.offline {
+            background-color: var(--text-muted);
+        }
+
+        .status-dot.online {
+            background-color: var(--success-color);
+            box-shadow: 0 0 5px var(--success-color);
         }
 
         .spin {
@@ -121,6 +208,72 @@
         .notification-overlay.show {
             display: block;
         }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--card-bg) 0%, #1c2128 100%);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .stat-icon {
+                font-size: 1.5rem;
+            }
+
+            .stat-value {
+                font-size: 1.25rem;
+            }
+
+            /* Hide non-essential columns on mobile */
+            .table th:nth-child(3),
+            .table td:nth-child(3),
+            /* MAC */
+            .table th:nth-child(4),
+            .table td:nth-child(4),
+            /* Vendor */
+            .table th:nth-child(6),
+            .table td:nth-child(6),
+            /* Ports */
+            .table th:nth-child(7),
+            .table td:nth-child(7),
+            /* Metrics */
+            .table th:nth-child(8),
+            .table td:nth-child(8)
+
+            /* Last Seen */
+                {
+                display: none;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .stat-card {
+                margin-bottom: 1rem;
+            }
+        }
     </style>
 </head>
 
@@ -147,6 +300,12 @@
                         <option value="3600000">1h</option>
                     </select>
                 </div>
+                <div class="me-3" title="Real-time Status">
+                    <i class="bi bi-broadcast text-muted" id="liveIndicator"></i>
+                </div>
+                <button class="btn btn-link text-light me-2 p-0" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                    <i class="bi bi-sun" id="themeIcon"></i>
+                </button>
                 <button class="btn btn-outline-light position-relative" onclick="toggleNotifications()">
                     <i class="bi bi-bell"></i>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -159,6 +318,75 @@
     </nav>
 
     <div class="container">
+        <!-- Network Health Score -->
+        <div class="card mb-4 bg-dark border-secondary shadow-sm">
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <span class="text-muted small">NETWORK HEALTH SCORE:</span>
+                        <span
+                            class="fw-bold fs-5 ms-2 {{if lt .networkSecurityScore 70}}text-danger{{else if lt .networkSecurityScore 90}}text-warning{{else}}text-success{{end}}">{{.networkSecurityScore}}%</span>
+                    </div>
+                    <div class="col">
+                        <div class="progress" style="height: 8px; background-color: rgba(255,255,255,0.1);">
+                            <div class="progress-bar {{if lt .networkSecurityScore 70}}bg-danger{{else if lt .networkSecurityScore 90}}bg-warning{{else}}bg-success{{end}}"
+                                role="progressbar" style="width: {{.networkSecurityScore}}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Widgets -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-primary me-3"><i class="bi bi-hdd-network"></i></div>
+                        <div>
+                            <span class="stat-value">{{.totalDevices}}</span>
+                            <span class="stat-label">Total Devices</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-success me-3"><i class="bi bi-broadcast"></i></div>
+                        <div>
+                            <span class="stat-value">{{.activeDevices}}</span>
+                            <span class="stat-label">Active (24h)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-info me-3"><i class="bi bi-shield-check"></i></div>
+                        <div>
+                            <span class="stat-value">{{.knownDevices}}</span>
+                            <span class="stat-label">Known Devices</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm border-{{if gt .criticalRisks 0}}danger{{else}}success{{end}}">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-{{if gt .criticalRisks 0}}danger{{else}}success{{end}} me-3">
+                            <i class="bi bi-shield-{{if gt .criticalRisks 0}}exclamation{{else}}check{{end}}"></i>
+                        </div>
+                        <div>
+                            <span class="stat-value">{{.criticalRisks}}</span>
+                            <span class="stat-label">Security Risks</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Statistics Section -->
         <div class="row mb-4">
             <div class="col-md-8">
@@ -184,6 +412,35 @@
         </div>
 
         <div class="row mb-4">
+            <div class="col-lg-8 mx-auto">
+                <div class="search-container">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="deviceSearch" class="form-control"
+                        placeholder="Search devices... (e.g., Apple, tag:wifi, port:80, known:yes)" value="{{.query}}"
+                        onkeyup="handleSearchKeyUp(event)" list="searchSuggestions">
+                    <datalist id="searchSuggestions">
+                        <option value="tag:">
+                        <option value="port:">
+                        <option value="known:yes">
+                        <option value="known:no">
+                        <option value="vendor:">
+                        <option value="type:">
+                    </datalist>
+                    {{if .query}}
+                    <button class="clear-search" onclick="clearSearch()">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                    {{else}}
+                    <div id="searchHint"
+                        class="position-absolute end-0 top-50 translate-middle-y me-3 pointer-events-none opacity-50 small d-none d-md-block">
+                        <span class="badge bg-secondary">/</span> to search
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
             <div class="col">
                 <div class="card shadow-sm">
                     <div class="card-header border-secondary">
@@ -199,6 +456,7 @@
                                         <th>MAC Address</th>
                                         <th>Vendor</th>
                                         <th>Type & Tags</th>
+                                        <th>Security Risks</th>
                                         <th>Open Ports</th>
                                         <th>Metrics</th>
                                         <th>Last Seen</th>
@@ -208,7 +466,7 @@
                                 <tbody>
                                     {{range .devices}}
                                     {{$ip := .IP}}
-                                    <tr>
+                                    <tr class="fade-in">
                                         <td><span class="status-dot"></span>Active</td>
                                         <td>
                                             {{if .CustomName}}
@@ -238,6 +496,16 @@
                                                     style="font-size: 0.65em;">{{.}}</span>
                                                 {{end}}
                                             </div>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{if .Vulnerabilities}}
+                                            <span class="badge bg-danger shadow-sm" title="Security Risks Detected">
+                                                <i class="bi bi-exclamation-triangle"></i> {{len .Vulnerabilities}}
+                                            </span>
+                                            {{else}}
+                                            <span class="text-success small" title="Tested and secure"><i
+                                                    class="bi bi-shield-check"></i> Safe</span>
                                             {{end}}
                                         </td>
                                         <td>
@@ -272,7 +540,8 @@
                                                 data-ip="{{.IP}}" data-custom-name="{{.CustomName}}"
                                                 data-custom-type="{{.CustomType}}" data-is-known="{{.IsKnown}}"
                                                 data-tags="{{range $i, $t := .Tags}}{{if $i}},{{end}}{{$t}}{{end}}"
-                                                data-notes="{{.Notes}}" title="Edit Device">
+                                                data-notes="{{.Notes}}" data-vulnerabilities='{{json .Vulnerabilities}}'
+                                                title="Edit Device">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <button class="btn btn-sm btn-outline-primary"
@@ -423,6 +692,20 @@
                             <textarea class="form-control bg-dark text-light border-secondary" id="editNotes"
                                 rows="3"></textarea>
                         </div>
+                        <div id="vulnerabilitiesSection" class="d-none">
+                            <hr class="border-secondary">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label text-warning mb-0"><i class="bi bi-exclamation-triangle"></i>
+                                    Security Vulnerabilities</label>
+                                <button type="button" class="btn btn-sm btn-outline-warning"
+                                    onclick="rescanVulnerabilities()">
+                                    <i class="bi bi-shield-shaded"></i> Rescan
+                                </button>
+                            </div>
+                            <div id="vulnerabilitiesList" class="list-group list-group-flush bg-transparent">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer border-secondary">
@@ -442,8 +725,43 @@
             document.getElementById('editCustomType').value = data.customType || '';
             document.getElementById('editTags').value = data.tags || '';
             document.getElementById('editNotes').value = data.notes || '';
-            // Dataset values are strings, check for 'true'
             document.getElementById('editIsKnown').checked = data.isKnown === 'true';
+
+            // Show vulnerabilities if any
+            const vulnSection = document.getElementById('vulnerabilitiesSection');
+            const vulnList = document.getElementById('vulnerabilitiesList');
+            vulnList.innerHTML = '';
+
+            if (data.vulnerabilities && data.vulnerabilities !== 'null' && data.vulnerabilities !== '[]') {
+                try {
+                    const vulns = JSON.parse(data.vulnerabilities);
+                    if (vulns && vulns.length > 0) {
+                        vulnSection.classList.remove('d-none');
+                        vulns.forEach(v => {
+                            const severityClass = v.severity === 'critical' ? 'danger' :
+                                (v.severity === 'high' ? 'warning text-dark' : 'info text-dark');
+
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item bg-transparent border-secondary px-0 text-light';
+                            item.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-${severityClass} me-2">${v.severity.toUpperCase()}</span>
+                                    <span class="fw-bold">${v.name}</span>
+                                </div>
+                                <div class="small text-muted mt-1">${v.description}</div>
+                            `;
+                            vulnList.appendChild(item);
+                        });
+                    } else {
+                        vulnSection.classList.add('d-none');
+                    }
+                } catch (e) {
+                    console.error('Error parsing vulnerabilities:', e);
+                    vulnSection.classList.add('d-none');
+                }
+            } else {
+                vulnSection.classList.add('d-none');
+            }
 
             new bootstrap.Modal(document.getElementById('editDeviceModal')).show();
         }
@@ -478,9 +796,164 @@
                 });
         }
 
+        function rescanVulnerabilities() {
+            const mac = document.getElementById('editDeviceMac').value;
+            const btn = event.currentTarget;
+            const originalContent = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Checking...';
+
+            fetch(`/api/devices/${mac}/check-vulnerabilities`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Refresh the modal content with new vulns
+                        const vulnSection = document.getElementById('vulnerabilitiesSection');
+                        const vulnList = document.getElementById('vulnerabilitiesList');
+                        vulnList.innerHTML = '';
+
+                        if (data.vulnerabilities && data.vulnerabilities.length > 0) {
+                            vulnSection.classList.remove('d-none');
+                            data.vulnerabilities.forEach(v => {
+                                const severityClass = v.severity === 'critical' ? 'danger' :
+                                    (v.severity === 'high' ? 'warning text-dark' : 'info text-dark');
+
+                                const item = document.createElement('div');
+                                item.className = 'list-group-item bg-transparent border-secondary px-0 text-light fade-in';
+                                item.innerHTML = `
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-${severityClass} me-2">${v.severity.toUpperCase()}</span>
+                                        <span class="fw-bold">${v.name}</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">${v.description}</div>
+                                `;
+                                vulnList.appendChild(item);
+                            });
+                        } else {
+                            vulnSection.classList.add('d-none');
+                            alert('No vulnerabilities found!');
+                        }
+                    } else {
+                        alert('Check failed: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(err => alert('Error checking vulnerabilities: ' + err))
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                });
+        }
+
         let currentScanIp = null;
         let pollInterval = null;
         let autoRefreshTimeout = null;
+        let socket = null;
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                if (theme === 'dark') {
+                    icon.className = 'bi bi-sun';
+                } else {
+                    icon.className = 'bi bi-moon-stars';
+                }
+            }
+        }
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        // Wait for DOM to update icon
+        document.addEventListener('DOMContentLoaded', () => updateThemeIcon(savedTheme));
+
+        // Initialize WebSocket
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = function () {
+                console.log('WebSocket connected');
+                document.getElementById('liveIndicator').classList.add('text-success');
+                document.getElementById('liveIndicator').classList.remove('text-muted');
+            };
+
+            socket.onmessage = function (event) {
+                const msg = JSON.parse(event.data);
+                handleWSMessage(msg);
+            };
+
+            socket.onclose = function () {
+                console.log('WebSocket disconnected. Retrying in 5s...');
+                document.getElementById('liveIndicator').classList.remove('text-success');
+                document.getElementById('liveIndicator').classList.add('text-muted');
+                setTimeout(initWebSocket, 5000);
+            };
+
+            socket.onerror = function (err) {
+                console.error('WebSocket error:', err);
+                socket.close();
+            };
+        }
+
+        function handleSearchKeyUp(event) {
+            if (event.key === "Enter") {
+                const query = event.target.value.trim();
+                if (query) {
+                    window.location.href = `/?q=${encodeURIComponent(query)}`;
+                } else {
+                    window.location.href = "/";
+                }
+            }
+        }
+
+        function clearSearch() {
+            window.location.href = "/";
+        }
+
+        // Global hotkeys
+        document.addEventListener('keydown', function (e) {
+            // '/' to focus search
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                document.getElementById('deviceSearch').focus();
+            }
+        });
+
+        function handleWSMessage(msg) {
+            console.log('WS Message:', msg);
+            switch (msg.type) {
+                case 'scan_progress':
+                    if (currentScanIp === msg.ip) {
+                        updateScanUI(msg.data);
+                    }
+                    break;
+                case 'scan_complete':
+                    if (currentScanIp === msg.ip) {
+                        handleScanComplete(msg.ip, msg.data);
+                    }
+                    break;
+                case 'discovery_complete':
+                    const live = document.getElementById('autoRefreshToggle').checked;
+                    if (live && !document.querySelector('.modal.show') && !currentScanIp) {
+                        console.log('Discovery complete, reloading...');
+                        location.reload();
+                    }
+                    break;
+                case 'notification':
+                    loadNotifications();
+                    break;
+            }
+        }
 
         // User Settings logic
         const storedRefresh = localStorage.getItem('autoRefreshEnabled');
@@ -551,7 +1024,10 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'started') {
-                        pollProgress();
+                        // We use WebSocket for progress now, but keep polling as fallback if WS fails
+                        if (!socket || socket.readyState !== WebSocket.OPEN) {
+                            pollProgress();
+                        }
                     } else {
                         alert('Error starting scan: ' + (data.error || 'Unknown error'));
                         progressModal.hide();
@@ -565,6 +1041,32 @@
                 });
         }
 
+        function updateScanUI(data) {
+            const progress = data.progress || 0;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressBar').textContent = progress + '%';
+            document.getElementById('currentPort').textContent = data.current_port || 0;
+            document.getElementById('portsFound').textContent = data.ports_found || 0;
+
+            const elapsed = Math.floor(data.elapsed_time || 0);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('elapsedTime').textContent =
+                minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+        }
+
+        function handleScanComplete(ip, data) {
+            updateScanUI(data);
+            const progressModal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+            if (progressModal) progressModal.hide();
+
+            const portsFound = data.ports_found || 0;
+            alert(`✓ Scan complete!\n\nFound ${portsFound} open port(s) on ${ip}`);
+
+            currentScanIp = null;
+            location.reload();
+        }
+
         function pollProgress() {
             if (!currentScanIp) return;
 
@@ -572,21 +1074,11 @@
                 fetch(`/api/scan-progress/${currentScanIp}`)
                     .then(response => response.json())
                     .then(data => {
-                        const progress = data.progress || 0;
-                        document.getElementById('progressBar').style.width = progress + '%';
-                        document.getElementById('progressBar').textContent = progress + '%';
-                        document.getElementById('currentPort').textContent = data.current_port || 0;
-                        document.getElementById('portsFound').textContent = data.ports_found || 0;
-
-                        const elapsed = Math.floor(data.elapsed_time || 0);
-                        const minutes = Math.floor(elapsed / 60);
-                        const seconds = elapsed % 60;
-                        document.getElementById('elapsedTime').textContent =
-                            minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                        updateScanUI(data);
 
                         if (data.status === 'complete') {
                             clearInterval(pollInterval);
-                            showCompletionAndUpdate(data);
+                            handleScanComplete(currentScanIp, data);
                         } else if (data.status === 'error') {
                             clearInterval(pollInterval);
                             alert('Scan error: ' + (data.error || 'Unknown error'));
@@ -597,17 +1089,7 @@
                         }
                     })
                     .catch(error => console.error('Error polling progress:', error));
-            }, 500);
-        }
-
-        function showCompletionAndUpdate(data) {
-            const progressModal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
-            progressModal.hide();
-
-            const portsFound = data.ports_found || 0;
-            alert(`✓ Scan complete!\\n\\nFound ${portsFound} open port(s) on ${currentScanIp}`);
-
-            window.location.reload();
+            }, 1000);
         }
 
         // Notifications functionality
@@ -737,8 +1219,9 @@
 
         // Load notifications on page load
         loadNotifications();
+        initWebSocket();
 
-        // Refresh notifications every 30 seconds
+        // Refresh notifications every 30 seconds (backup)
         setInterval(loadNotifications, 30000);
 
         // Charts Initialization

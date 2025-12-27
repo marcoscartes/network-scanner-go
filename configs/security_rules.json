@@ -1,0 +1,58 @@
+[
+  {
+    "id": "VULN-001",
+    "name": "Telnet Exposure",
+    "port": 23,
+    "severity": "high",
+    "description": "Telnet protocol is enabled. Communication is unencrypted, exposing credentials.",
+    "solution": "Disable Telnet and use SSH (port 22) instead."
+  },
+  {
+    "id": "VULN-002",
+    "name": "FTP Exposure",
+    "port": 21,
+    "severity": "medium",
+    "description": "FTP sends credentials and data in cleartext.",
+    "solution": "Use SFTP or FTPS instead."
+  },
+  {
+    "id": "VULN-003",
+    "name": "Unsecured HTTP",
+    "port": 80,
+    "severity": "low",
+    "description": "HTTP traffic is not encrypted.",
+    "solution": "Implement HTTPS (port 443) and redirect HTTP traffic."
+  },
+  {
+    "id": "VULN-004",
+    "name": "SMBv1 Exposure",
+    "port": 445,
+    "severity": "critical",
+    "description": "SMB port is open. SMBv1 is highly vulnerable to exploits like EternalBlue.",
+    "solution": "Ensure SMBv1 is disabled and port is not exposed to untrusted networks."
+  },
+  {
+    "id": "VULN-005",
+    "name": "UPnP Enabled",
+    "port": 1900,
+    "severity": "medium",
+    "description": "UPnP can be used to bypass firewall rules automatically.",
+    "solution": "Disable UPnP if not explicitly required."
+  },
+  {
+    "id": "VULN-006",
+    "name": "Database Exposed",
+    "port": 3306,
+    "severity": "high",
+    "description": "MySQL database port is exposed.",
+    "solution": "Restrict access to trusted IPs only or use a VPN."
+  },
+  {
+    "id": "VULN-007",
+    "name": "Redis Exposed",
+    "port": 6379,
+    "severity": "critical",
+    "description": "Redis port is open. Redis often has no password by default.",
+    "solution": "Bind Redis to localhost or require strong authentication."
+  }
+]

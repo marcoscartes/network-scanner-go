@@ -7,6 +7,7 @@ import (
 	"network-scanner-go/internal/history"
 	"network-scanner-go/internal/notifications"
 	"network-scanner-go/internal/scanner"
+	"network-scanner-go/internal/security"
 	"network-scanner-go/internal/web"
 	"sync"
 	"time"
@@ -77,6 +78,9 @@ func main() {
 	if len(devices) > 0 {
 		detector.UpdateState(devices)
 	}
+
+	// Load security rules
+	security.LoadRules(security.GetDefaultRulesPath())
 
 	log.Println("Notification system initialized")
 
@@ -157,6 +161,9 @@ func main() {
 					d.OpenPorts = mergedPorts
 				}
 
+				// Check for vulnerabilities
+				d.Vulnerabilities = security.CheckDevice(d.OpenPorts, d.Type)
+
 				// Save to database
 				if err := database.UpsertDevice(d); err != nil {
 					log.Printf("Failed to save device %s: %v", d.IP, err)
@@ -165,6 +172,11 @@ func main() {
 		}
 
 		wg.Wait()
+
+		server.Broadcast(map[string]interface{}{
+			"type": "discovery_complete",
+			"data": discoveredDevices,
+		})
 
 		// Detect and notify changes
 		previousDevices := make([]*database.Device, 0)
@@ -189,6 +201,10 @@ func main() {
 				if err := notificationManager.NotifyChange(change); err != nil {
 					log.Printf("Failed to send notification: %v", err)
 				}
+				server.Broadcast(map[string]interface{}{
+					"type": "notification",
+					"data": change,
+				})
 			}
 		}
 

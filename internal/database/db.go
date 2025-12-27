@@ -41,6 +41,7 @@ func Init(dbPath string) error {
 			tags TEXT,
 			notes TEXT,
 			open_ports TEXT,
+			vulnerabilities TEXT,
 			metrics_urls TEXT,
 			last_seen INTEGER NOT NULL,
 			first_seen INTEGER DEFAULT 0
@@ -115,6 +116,7 @@ func Init(dbPath string) error {
 		"ALTER TABLE devices ADD COLUMN notes TEXT",
 		"ALTER TABLE devices ADD COLUMN is_known INTEGER DEFAULT 0",
 		"ALTER TABLE devices ADD COLUMN first_seen INTEGER DEFAULT 0",
+		"ALTER TABLE devices ADD COLUMN vulnerabilities TEXT",
 	}
 
 	for _, query := range migrations {
@@ -136,22 +138,24 @@ func UpsertDevice(device *Device) error {
 	defer dbMu.Unlock()
 
 	openPortsJSON, _ := json.Marshal(device.OpenPorts)
+	vulnerabilitiesJSON, _ := json.Marshal(device.Vulnerabilities)
 	metricsURLsJSON, _ := json.Marshal(device.MetricsURLs)
 
 	// For new devices, first_seen should be set to last_seen/now
 	// For existing devices, we do NOT update custom fields
 	_, err := db.Exec(`
-		INSERT INTO devices (mac, ip, vendor, type, open_ports, metrics_urls, last_seen, first_seen)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO devices (mac, ip, vendor, type, open_ports, vulnerabilities, metrics_urls, last_seen, first_seen)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(mac) DO UPDATE SET
 			ip = excluded.ip,
 			vendor = excluded.vendor,
 			type = excluded.type,
 			open_ports = excluded.open_ports,
+			vulnerabilities = excluded.vulnerabilities,
 			metrics_urls = excluded.metrics_urls,
 			last_seen = excluded.last_seen
 	`, device.MAC, device.IP, device.Vendor, device.Type,
-		string(openPortsJSON), string(metricsURLsJSON), device.LastSeen.Unix(), device.LastSeen.Unix())
+		string(openPortsJSON), string(vulnerabilitiesJSON), string(metricsURLsJSON), device.LastSeen.Unix(), device.LastSeen.Unix())
 
 	return err
 }
@@ -159,7 +163,7 @@ func UpsertDevice(device *Device) error {
 // GetAllDevices retrieves all devices from the database
 func GetAllDevices() ([]*Device, error) {
 	rows, err := db.Query(`
-		SELECT id, mac, ip, custom_name, vendor, type, custom_type, is_known, tags, notes, open_ports, metrics_urls, last_seen, first_seen
+		SELECT id, mac, ip, custom_name, vendor, type, custom_type, is_known, tags, notes, open_ports, vulnerabilities, metrics_urls, last_seen, first_seen
 		FROM devices
 		ORDER BY last_seen DESC
 	`)
@@ -171,14 +175,14 @@ func GetAllDevices() ([]*Device, error) {
 	var devices []*Device
 	for rows.Next() {
 		var device Device
-		var openPortsJSON, metricsURLsJSON string
+		var openPortsJSON, vulnerabilitiesJSON, metricsURLsJSON string
 		var tagsJSON sql.NullString
 		var customName, customType, notes sql.NullString
 		var lastSeenUnix int64
 		var firstSeenUnix sql.NullInt64
 
 		err := rows.Scan(&device.ID, &device.MAC, &device.IP, &customName, &device.Vendor,
-			&device.Type, &customType, &device.IsKnown, &tagsJSON, &notes, &openPortsJSON, &metricsURLsJSON, &lastSeenUnix, &firstSeenUnix)
+			&device.Type, &customType, &device.IsKnown, &tagsJSON, &notes, &openPortsJSON, &vulnerabilitiesJSON, &metricsURLsJSON, &lastSeenUnix, &firstSeenUnix)
 		if err != nil {
 			continue
 		}
@@ -197,6 +201,7 @@ func GetAllDevices() ([]*Device, error) {
 		}
 
 		json.Unmarshal([]byte(openPortsJSON), &device.OpenPorts)
+		json.Unmarshal([]byte(vulnerabilitiesJSON), &device.Vulnerabilities)
 		json.Unmarshal([]byte(metricsURLsJSON), &device.MetricsURLs)
 		device.LastSeen = time.Unix(lastSeenUnix, 0)
 		if firstSeenUnix.Valid {
