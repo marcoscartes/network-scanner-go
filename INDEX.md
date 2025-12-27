@@ -435,7 +435,7 @@ Level 4: After NEXT_STEPS features
 ---
 
 **Last Updated**: 2025-12-19  
-**Version**: 1.0  
+**Version**: 0.6.0  
 **Status**: Ready for use
 
 ---

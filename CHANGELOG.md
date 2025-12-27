@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0] - 2025-12-27
+## [0.6.0] - 2025-12-27
 
 ### Added
 - **Vulnerability Intelligence**: Added actionable "Fix" instructions and "Learn More" external links for all detected vulnerabilities.
