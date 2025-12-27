@@ -9,272 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --border-color: #30363d;
-            --text-color: #c9d1d9;
-            --text-muted: #8b949e;
-            --primary-color: #1f6feb;
-            --accent-color: #58a6ff;
-            --success-color: #238636;
-            --warning-color: #d29922;
-            --danger-color: #f85149;
-        }
-
-        [data-bs-theme="light"] {
-            --bg-color: #f6f8fa;
-            --card-bg: #ffffff;
-            --border-color: #d0d7de;
-            --text-color: #24292f;
-            --text-muted: #57606a;
-            --primary-color: #0969da;
-            --accent-color: #0969da;
-            --success-color: #1a7f37;
-            --warning-color: #9a6700;
-            --danger-color: #cf222e;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-
-        .container {
-            max-width: 1400px;
-        }
-
-        .card {
-            background-color: #161b22;
-            border-color: #30363d;
-        }
-
-        .table-hover tbody tr:hover td,
-        .table-hover tbody tr:hover th {
-            background-color: #21262d;
-        }
-
-        .status-dot {
-            height: 10px;
-            width: 10px;
-            background-color: #238636;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        .badge-metrics {
-            background-color: #1f6feb;
-        }
-
-        .search-container {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #8b949e;
-        }
-
-        #deviceSearch {
-            padding-left: 45px;
-            background-color: #0d1117;
-            border-color: #30363d;
-            color: #c9d1d9;
-            border-radius: 25px;
-            transition: all 0.2s ease;
-        }
-
-        #deviceSearch:focus {
-            background-color: #161b22;
-            border-color: #58a6ff;
-            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.25);
-            outline: none;
-        }
-
-        .clear-search {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: none;
-            background: none;
-            color: #8b949e;
-            padding: 0;
-            cursor: pointer;
-        }
-
-        .clear-search:hover {
-            color: #c9d1d9;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .status-dot.offline {
-            background-color: var(--text-muted);
-        }
-
-        .status-dot.online {
-            background-color: var(--success-color);
-            box-shadow: 0 0 5px var(--success-color);
-        }
-
-        .spin {
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-
-        /* Notifications Sidebar */
-        .notifications-sidebar {
-            position: fixed;
-            top: 0;
-            right: -400px;
-            width: 400px;
-            height: 100vh;
-            background-color: #161b22;
-            border-left: 1px solid #30363d;
-            z-index: 1050;
-            transition: right 0.3s ease;
-            overflow-y: auto;
-        }
-
-        .notifications-sidebar.show {
-            right: 0;
-        }
-
-        .notifications-header {
-            padding: 1rem;
-            border-bottom: 1px solid #30363d;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            background-color: #161b22;
-            z-index: 1;
-        }
-
-        .notifications-body {
-            padding: 1rem;
-        }
-
-        .notification-item {
-            background-color: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
-            transition: background-color 0.2s;
-        }
-
-        .notification-item:hover {
-            background-color: #21262d;
-        }
-
-        .notification-item.unread {
-            border-left: 3px solid #1f6feb;
-        }
-
-        .notification-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1040;
-            display: none;
-        }
-
-        .notification-overlay.show {
-            display: block;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, var(--card-bg) 0%, #1c2128 100%);
-            border: 1px solid var(--border-color);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-        }
-
-        .stat-icon {
-            font-size: 2rem;
-            opacity: 0.8;
-        }
-
-        .stat-value {
-            font-size: 1.75rem;
-            font-weight: bold;
-            display: block;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-        }
-
-        @media (max-width: 768px) {
-            .stat-icon {
-                font-size: 1.5rem;
-            }
-
-            .stat-value {
-                font-size: 1.25rem;
-            }
-
-            /* Hide non-essential columns on mobile */
-            .table th:nth-child(3),
-            .table td:nth-child(3),
-            /* MAC */
-            .table th:nth-child(4),
-            .table td:nth-child(4),
-            /* Vendor */
-            .table th:nth-child(6),
-            .table td:nth-child(6),
-            /* Ports */
-            .table th:nth-child(7),
-            .table td:nth-child(7),
-            /* Metrics */
-            .table th:nth-child(8),
-            .table td:nth-child(8)
-
-            /* Last Seen */
-                {
-                display: none;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .stat-card {
-                margin-bottom: 1rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body>
@@ -289,8 +24,7 @@
                         <label class="form-check-label text-light small" for="autoRefreshToggle">Live</label>
                     </div>
                     <select class="form-select form-select-sm bg-dark text-light border-secondary py-0"
-                        id="refreshInterval" onchange="updateRefreshSettings()"
-                        style="height: 24px; font-size: 0.8rem; width: auto;">
+                        id="refreshInterval" onchange="updateRefreshSettings()">
                         <option value="5000">5s</option>
                         <option value="10000">10s</option>
                         <option value="30000" selected>30s</option>
@@ -316,7 +50,7 @@
                                     class="bi bi-upload me-2"></i> Import JSON</a></li>
                     </ul>
                 </div>
-                <input type="file" id="importFile" style="display: none;" onchange="importDevices(this)">
+                <input type="file" id="importFile" class="hidden" onchange="importDevices(this)">
                 <div class="me-3" title="Real-time Status">
                     <i class="bi bi-broadcast text-muted" id="liveIndicator"></i>
                 </div>
@@ -325,8 +59,8 @@
                 </button>
                 <button class="btn btn-outline-light position-relative" onclick="toggleNotifications()">
                     <i class="bi bi-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        id="notificationBadge" style="display: none;">
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger hidden"
+                        id="notificationBadge">
                         0
                     </span>
                 </button>
@@ -345,7 +79,7 @@
                             class="fw-bold fs-5 ms-2 {{if lt .networkSecurityScore 70}}text-danger{{else if lt .networkSecurityScore 90}}text-warning{{else}}text-success{{end}}">{{.networkSecurityScore}}%</span>
                     </div>
                     <div class="col">
-                        <div class="progress" style="height: 8px; background-color: rgba(255,255,255,0.1);">
+                        <div class="progress progress-container">
                             <div class="progress-bar {{if lt .networkSecurityScore 70}}bg-danger{{else if lt .networkSecurityScore 90}}bg-warning{{else}}bg-success{{end}}"
                                 role="progressbar" style="width: {{.networkSecurityScore}}%;"></div>
                         </div>
@@ -412,7 +146,7 @@
                         <h5 class="card-title mb-0"><i class="bi bi-graph-up"></i> Network Activity (Last 30 Days)</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="networkActivityChart" style="max-height: 300px;"></canvas>
+                        <canvas id="networkActivityChart" class="chart-canvas"></canvas>
                     </div>
                 </div>
             </div>
@@ -422,7 +156,7 @@
                         <h5 class="card-title mb-0"><i class="bi bi-pie-chart"></i> Device Types</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="deviceDistributionChart" style="max-height: 300px;"></canvas>
+                        <canvas id="deviceDistributionChart" class="chart-canvas"></canvas>
                     </div>
                 </div>
             </div>
@@ -511,8 +245,8 @@
                                             {{if .Tags}}
                                             <div class="mt-1">
                                                 {{range .Tags}}
-                                                <span class="badge border border-secondary text-secondary"
-                                                    style="font-size: 0.65em;">{{.}}</span>
+                                                <span
+                                                    class="badge border border-secondary text-secondary tag-badge">{{.}}</span>
                                                 {{end}}
                                             </div>
                                             {{end}}
@@ -551,7 +285,7 @@
                                         <td>
                                             {{if .MetricsURLs}}
                                             <span class="badge badge-metrics">{{len .MetricsURLs}} Endpoints</span><br>
-                                            <small class="text-muted" style="font-size: 0.75em;">
+                                            <small class="text-muted metrics-text">
                                                 {{range .MetricsURLs}}
                                                 <a href="{{.}}" target="_blank"
                                                     class="link-info text-decoration-none">{{.}}</a><br>
@@ -607,7 +341,7 @@
         </div>
         <div class="notifications-body" id="notificationsList">
             <div class="text-center text-muted py-5">
-                <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                <i class="bi bi-bell-slash empty-state-icon"></i>
                 <p>No notifications</p>
             </div>
         </div>
@@ -647,7 +381,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Scanning <strong id="progressIp"></strong></p>
-                    <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress mb-3 scan-progress-bar">
                         <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
                             role="progressbar" style="width: 0%">0%</div>
                     </div>
@@ -1204,7 +938,7 @@
             if (!notifications || notifications.length === 0) {
                 container.innerHTML = `
                     <div class="text-center text-muted py-5">
-                        <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                        <i class="bi bi-bell-slash empty-state-icon"></i>
                         <p>No notifications</p>
                     </div>
                 `;
