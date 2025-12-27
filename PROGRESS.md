@@ -210,6 +210,7 @@
 - 🏷️ **Groups & Tags**: Users can now organize devices into groups and apply searchable tags.
 - 📤 **Data Management**: Implemented JSON export and import for easy backup and migration of custom metadata.
 - 🔍 **Integrated Search**: Advanced search now supports `group:`, `tag:`, `known:`, etc.
+- 🛠️ **Stability**: Fixed `SQLITE_BUSY` (database is locked) errors by enabling WAL mode and busy_timeout.
 - 🚀 **Next**: Finalize any remaining production tasks or move to `NEXT_STEPS.md` (e.g., Authentication).
 
 ---
