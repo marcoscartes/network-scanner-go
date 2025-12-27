@@ -39,6 +39,7 @@ func Init(dbPath string) error {
 			custom_type TEXT,
 			is_known INTEGER DEFAULT 0,
 			tags TEXT,
+			group_name TEXT,
 			notes TEXT,
 			open_ports TEXT,
 			vulnerabilities TEXT,
@@ -117,6 +118,7 @@ func Init(dbPath string) error {
 		"ALTER TABLE devices ADD COLUMN is_known INTEGER DEFAULT 0",
 		"ALTER TABLE devices ADD COLUMN first_seen INTEGER DEFAULT 0",
 		"ALTER TABLE devices ADD COLUMN vulnerabilities TEXT",
+		"ALTER TABLE devices ADD COLUMN group_name TEXT",
 	}
 
 	for _, query := range migrations {
@@ -144,8 +146,8 @@ func UpsertDevice(device *Device) error {
 	// For new devices, first_seen should be set to last_seen/now
 	// For existing devices, we do NOT update custom fields
 	_, err := db.Exec(`
-		INSERT INTO devices (mac, ip, vendor, type, open_ports, vulnerabilities, metrics_urls, last_seen, first_seen)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO devices (mac, ip, vendor, type, open_ports, vulnerabilities, metrics_urls, last_seen, first_seen, group_name)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(mac) DO UPDATE SET
 			ip = excluded.ip,
 			vendor = excluded.vendor,
@@ -155,7 +157,7 @@ func UpsertDevice(device *Device) error {
 			metrics_urls = excluded.metrics_urls,
 			last_seen = excluded.last_seen
 	`, device.MAC, device.IP, device.Vendor, device.Type,
-		string(openPortsJSON), string(vulnerabilitiesJSON), string(metricsURLsJSON), device.LastSeen.Unix(), device.LastSeen.Unix())
+		string(openPortsJSON), string(vulnerabilitiesJSON), string(metricsURLsJSON), device.LastSeen.Unix(), device.LastSeen.Unix(), device.GroupName)
 
 	return err
 }
@@ -163,7 +165,7 @@ func UpsertDevice(device *Device) error {
 // GetAllDevices retrieves all devices from the database
 func GetAllDevices() ([]*Device, error) {
 	rows, err := db.Query(`
-		SELECT id, mac, ip, custom_name, vendor, type, custom_type, is_known, tags, notes, open_ports, vulnerabilities, metrics_urls, last_seen, first_seen
+		SELECT id, mac, ip, custom_name, vendor, type, custom_type, is_known, tags, notes, open_ports, vulnerabilities, metrics_urls, last_seen, first_seen, group_name
 		FROM devices
 		ORDER BY last_seen DESC
 	`)
@@ -182,7 +184,7 @@ func GetAllDevices() ([]*Device, error) {
 		var firstSeenUnix sql.NullInt64
 
 		err := rows.Scan(&device.ID, &device.MAC, &device.IP, &customName, &device.Vendor,
-			&device.Type, &customType, &device.IsKnown, &tagsJSON, &notes, &openPortsJSON, &vulnerabilitiesJSON, &metricsURLsJSON, &lastSeenUnix, &firstSeenUnix)
+			&device.Type, &customType, &device.IsKnown, &tagsJSON, &notes, &openPortsJSON, &vulnerabilitiesJSON, &metricsURLsJSON, &lastSeenUnix, &firstSeenUnix, &device.GroupName)
 		if err != nil {
 			continue
 		}
@@ -217,7 +219,7 @@ func GetAllDevices() ([]*Device, error) {
 }
 
 // UpdateDeviceDetails updates the user-configurable details of a device
-func UpdateDeviceDetails(mac string, customName string, customType string, isKnown bool, tags []string, notes string) error {
+func UpdateDeviceDetails(mac string, customName string, customType string, isKnown bool, tags []string, notes string, groupName string) error {
 	dbMu.Lock()
 	defer dbMu.Unlock()
 
@@ -225,9 +227,9 @@ func UpdateDeviceDetails(mac string, customName string, customType string, isKno
 
 	result, err := db.Exec(`
 		UPDATE devices 
-		SET custom_name = ?, custom_type = ?, is_known = ?, tags = ?, notes = ?
+		SET custom_name = ?, custom_type = ?, is_known = ?, tags = ?, notes = ?, group_name = ?
 		WHERE mac = ?
-	`, customName, customType, isKnown, string(tagsJSON), notes, mac)
+	`, customName, customType, isKnown, string(tagsJSON), notes, groupName, mac)
 
 	if err != nil {
 		return err

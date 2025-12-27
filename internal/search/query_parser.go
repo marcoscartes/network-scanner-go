@@ -14,6 +14,7 @@ type DeviceQuery struct {
 	IsKnown *bool    // known:true/false
 	Vendor  string   // vendor:apple
 	Type    string   // type:server
+	Group   string   // group:home
 }
 
 // Parse parses a search string into a DeviceQuery
@@ -41,6 +42,8 @@ func Parse(queryStr string) DeviceQuery {
 				query.Vendor = strings.ToLower(value)
 			case "type":
 				query.Type = strings.ToLower(value)
+			case "group":
+				query.Group = strings.ToLower(value)
 			default:
 				// Treat as general text if key is unknown
 				if query.Text == "" {
@@ -72,7 +75,8 @@ func (q *DeviceQuery) Match(d *database.Device) bool {
 			strings.Contains(strings.ToLower(d.Vendor), text) ||
 			strings.Contains(strings.ToLower(d.Notes), text) ||
 			strings.Contains(strings.ToLower(d.Type), text) ||
-			strings.Contains(strings.ToLower(d.CustomType), text)
+			strings.Contains(strings.ToLower(d.CustomType), text) ||
+			strings.Contains(strings.ToLower(d.GroupName), text)
 
 		if !match {
 			return false
@@ -124,6 +128,13 @@ func (q *DeviceQuery) Match(d *database.Device) bool {
 	// Type
 	if q.Type != "" {
 		if !strings.EqualFold(q.Type, d.Type) && !strings.EqualFold(q.Type, d.CustomType) {
+			return false
+		}
+	}
+
+	// Group
+	if q.Group != "" {
+		if !strings.EqualFold(q.Group, d.GroupName) {
 			return false
 		}
 	}

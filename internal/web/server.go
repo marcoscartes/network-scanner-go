@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"network-scanner-go/internal/database"
+	"network-scanner-go/internal/management"
 	"network-scanner-go/internal/scanner"
 	"network-scanner-go/internal/search"
 	"network-scanner-go/internal/security"
@@ -83,6 +84,10 @@ func (s *Server) setupRoutes() {
 
 	// WebSocket endpoint
 	s.router.HandleFunc("/ws", s.wsManager.HandleConnections)
+
+	// Export/Import
+	s.router.HandleFunc("/api/export", s.handleExport).Methods("GET")
+	s.router.HandleFunc("/api/import", s.handleImport).Methods("POST")
 }
 
 // handleIndex renders the dashboard
@@ -584,6 +589,7 @@ func (s *Server) handleUpdateDevice(w http.ResponseWriter, r *http.Request) {
 		IsKnown    bool     `json:"is_known"`
 		Tags       []string `json:"tags"`
 		Notes      string   `json:"notes"`
+		GroupName  string   `json:"group_name"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -591,7 +597,7 @@ func (s *Server) handleUpdateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := database.UpdateDeviceDetails(mac, req.CustomName, req.CustomType, req.IsKnown, req.Tags, req.Notes); err != nil {
+	if err := database.UpdateDeviceDetails(mac, req.CustomName, req.CustomType, req.IsKnown, req.Tags, req.Notes, req.GroupName); err != nil {
 		http.Error(w, "Failed to update device: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -673,5 +679,52 @@ func (s *Server) handleCheckVulnerabilities(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":          "success",
 		"vulnerabilities": vulns,
+	})
+}
+
+// handleExport handles the device export
+func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
+	data, err := management.ExportDevices()
+	if err != nil {
+		http.Error(w, "Export failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=network_devices.json")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
+// handleImport handles the device import
+func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
+	// Parse multipart form
+	err := r.ParseMultipartForm(10 << 20) // 10MB max
+	if err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "No file provided", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Read file content
+	content := make([]byte, 10<<20)
+	n, _ := file.Read(content)
+	content = content[:n]
+
+	count, err := management.ImportDevices(content)
+	if err != nil {
+		http.Error(w, "Import failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"count":  count,
 	})
 }

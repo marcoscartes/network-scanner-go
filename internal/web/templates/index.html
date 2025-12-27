@@ -300,6 +300,23 @@
                         <option value="3600000">1h</option>
                     </select>
                 </div>
+                <!-- Management Dropdown -->
+                <div class="dropdown me-3">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="bi bi-hdd-stack"></i> Data
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                        <li><a class="dropdown-item" href="/api/export" target="_blank"><i
+                                    class="bi bi-download me-2"></i> Export JSON</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="#" onclick="document.getElementById('importFile').click()"><i
+                                    class="bi bi-upload me-2"></i> Import JSON</a></li>
+                    </ul>
+                </div>
+                <input type="file" id="importFile" style="display: none;" onchange="importDevices(this)">
                 <div class="me-3" title="Real-time Status">
                     <i class="bi bi-broadcast text-muted" id="liveIndicator"></i>
                 </div>
@@ -425,6 +442,7 @@
                         <option value="known:no">
                         <option value="vendor:">
                         <option value="type:">
+                        <option value="group:">
                     </datalist>
                     {{if .query}}
                     <button class="clear-search" onclick="clearSearch()">
@@ -456,6 +474,7 @@
                                         <th>MAC Address</th>
                                         <th>Vendor</th>
                                         <th>Type & Tags</th>
+                                        <th>Group</th>
                                         <th>Security Risks</th>
                                         <th>Open Ports</th>
                                         <th>Metrics</th>
@@ -496,6 +515,15 @@
                                                     style="font-size: 0.65em;">{{.}}</span>
                                                 {{end}}
                                             </div>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{if .GroupName}}
+                                            <span class="badge bg-secondary rounded-pill">
+                                                <i class="bi bi-folder2"></i> {{.GroupName}}
+                                            </span>
+                                            {{else}}
+                                            <span class="text-muted small">None</span>
                                             {{end}}
                                         </td>
                                         <td>
@@ -541,7 +569,7 @@
                                                 data-custom-type="{{.CustomType}}" data-is-known="{{.IsKnown}}"
                                                 data-tags="{{range $i, $t := .Tags}}{{if $i}},{{end}}{{$t}}{{end}}"
                                                 data-notes="{{.Notes}}" data-vulnerabilities='{{json .Vulnerabilities}}'
-                                                title="Edit Device">
+                                                data-group-name="{{.GroupName}}" title="Edit Device">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <button class="btn btn-sm btn-outline-primary"
@@ -683,6 +711,18 @@
                                 placeholder="e.g. personal, critical, wifi">
                             <div class="form-text text-muted">Comma separated values</div>
                         </div>
+                        <div class="mb-3">
+                            <label for="editGroupName" class="form-label">Group</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary"
+                                id="editGroupName" list="groupSuggestions" placeholder="e.g. Home, Office, Servers">
+                            <datalist id="groupSuggestions">
+                                <option value="Home">
+                                <option value="Office">
+                                <option value="Servers">
+                                <option value="IoT">
+                                <option value="Guests">
+                            </datalist>
+                        </div>
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input bg-dark border-secondary" id="editIsKnown">
                             <label class="form-check-label" for="editIsKnown">Mark as Known/Trusted</label>
@@ -726,6 +766,7 @@
             document.getElementById('editTags').value = data.tags || '';
             document.getElementById('editNotes').value = data.notes || '';
             document.getElementById('editIsKnown').checked = data.isKnown === 'true';
+            document.getElementById('editGroupName').value = data.groupName || '';
 
             // Show vulnerabilities if any
             const vulnSection = document.getElementById('vulnerabilitiesSection');
@@ -763,6 +804,8 @@
                 vulnSection.classList.add('d-none');
             }
 
+            document.getElementById('editGroupName').value = data.groupName || '';
+
             new bootstrap.Modal(document.getElementById('editDeviceModal')).show();
         }
 
@@ -776,7 +819,8 @@
                 custom_type: document.getElementById('editCustomType').value,
                 is_known: document.getElementById('editIsKnown').checked,
                 tags: tags,
-                notes: document.getElementById('editNotes').value
+                notes: document.getElementById('editNotes').value,
+                group_name: document.getElementById('editGroupName').value
             };
 
             fetch(`/api/devices/${mac}`, {
@@ -793,6 +837,39 @@
                 })
                 .catch(err => {
                     alert('Error saving changes: ' + err.message);
+                });
+        }
+
+        function importDevices(input) {
+            if (!input.files || !input.files[0]) return;
+
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            if (!confirm(`Are you sure you want to import devices from ${file.name}? This will update existing devices and add new ones.`)) {
+                input.value = '';
+                return;
+            }
+
+            fetch('/api/import', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(`Successfully imported ${data.count} devices!`);
+                        location.reload();
+                    } else {
+                        throw new Error(data.error || 'Import failed');
+                    }
+                })
+                .catch(err => {
+                    alert('Error importing devices: ' + err.message);
+                })
+                .finally(() => {
+                    input.value = '';
                 });
         }
 

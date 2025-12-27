@@ -22,6 +22,7 @@ type Device struct {
 	CustomType      string          `json:"custom_type"` // User-assigned type
 	IsKnown         bool            `json:"is_known"`    // Trusted/Known device
 	Tags            []string        `json:"tags"`        // User tags
+	GroupName       string          `json:"group_name"`  // Device group (e.g., IoT, Servers)
 	Notes           string          `json:"notes"`
 	OpenPorts       []int           `json:"open_ports"`
 	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
