@@ -8,6 +8,8 @@ type Vulnerability struct {
 	Name        string `json:"name"`
 	Severity    string `json:"severity"`
 	Description string `json:"description"`
+	Solution    string `json:"solution"`
+	MoreInfo    string `json:"more_info"`
 	Port        int    `json:"port,omitempty"`
 }
 

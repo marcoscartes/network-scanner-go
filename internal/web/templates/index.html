@@ -262,7 +262,9 @@
                                         </td>
                                         <td>
                                             {{if .Vulnerabilities}}
-                                            <span class="badge bg-danger shadow-sm" title="Security Risks Detected">
+                                            <span class="badge bg-danger shadow-sm cursor-pointer"
+                                                onclick="openEditModal(this.closest('tr').querySelector('.btn-outline-secondary').dataset)"
+                                                title="Security Risks Detected">
                                                 <i class="bi bi-exclamation-triangle"></i> {{len .Vulnerabilities}}
                                             </span>
                                             {{else}}
@@ -524,6 +526,14 @@
                                     <span class="fw-bold">${v.name}</span>
                                 </div>
                                 <div class="small text-muted mt-1">${v.description}</div>
+                                ${v.solution ? `<div class="small text-info mt-1"><strong>Fix:</strong> ${v.solution}</div>` : ''}
+                                ${v.more_info ? `
+                                    <div class="mt-2 text-end">
+                                        <a href="${v.more_info}" target="_blank" class="btn btn-sm btn-outline-info py-0" style="font-size: 0.75rem;">
+                                            <i class="bi bi-info-circle"></i> Learn More
+                                        </a>
+                                    </div>
+                                ` : ''}
                             `;
                             vulnList.appendChild(item);
                         });
@@ -638,6 +648,14 @@
                                         <span class="fw-bold">${v.name}</span>
                                     </div>
                                     <div class="small text-muted mt-1">${v.description}</div>
+                                    ${v.solution ? `<div class="small text-info mt-1"><strong>Fix:</strong> ${v.solution}</div>` : ''}
+                                    ${v.more_info ? `
+                                        <div class="mt-2 text-end">
+                                            <a href="${v.more_info}" target="_blank" class="btn btn-sm btn-outline-info py-0" style="font-size: 0.75rem;">
+                                                <i class="bi bi-info-circle"></i> Learn More
+                                            </a>
+                                        </div>
+                                    ` : ''}
                                 `;
                                 vulnList.appendChild(item);
                             });

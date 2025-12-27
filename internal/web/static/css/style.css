@@ -166,6 +166,10 @@ body {
     height: 25px;
 }
 
+.cursor-pointer {
+    cursor: pointer;
+}
+
 
 /* Notifications Sidebar */
 .notifications-sidebar {
