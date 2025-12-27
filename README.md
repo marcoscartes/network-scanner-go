@@ -9,10 +9,14 @@ A high-performance network scanner written in Go that discovers devices on your 
 - **Device Identification**: Identifies device types based on open ports
 - **MAC Vendor Lookup**: Resolves device manufacturers
 - **Metrics Detection**: Finds Prometheus metrics endpoints
-- **Web Dashboard**: Real-time web interface with Bootstrap 5
-- **Full Port Scan**: On-demand complete port scanning with progress tracking
-- **SQLite Database**: Persistent storage of discovered devices
-- **Concurrent Scanning**: Fast parallel scanning using goroutines
+- **Security Auditing**: Detects vulnerable services with remediation guides and official documentation links
+- **Web Dashboard**: Modern real-time interface with dark/light mode and WebSocket updates
+- **Historical Trends**: Tracks device uptime and network growth with interactive charts
+- **Device Management**: Advanced organization with custom naming, tags, and groups
+- **Data Portability**: Full JSON import/export for device metadata
+- **Full Port Scan**: On-demand complete port scanning with real-time progress tracking
+- **SQLite Database**: Core persistent storage with WAL mode for high concurrency
+- **Concurrent Scanning**: Fast parallel scanning using goroutine pools
 
 ## Installation
 
@@ -67,7 +71,9 @@ Access the dashboard at: `http://localhost:5050`
 - Sort by any column
 - Click port numbers to open services
 - Full port scan with progress tracking
-- Real-time updates
+- **Interactive Security**: Click vulnerability badges to see "How to Fix"
+- **Historical Charts**: Network activity and device distribution
+- **Real-time**: Instant updates via WebSockets and Live indicators
 
 ### Full Port Scan
 
@@ -124,11 +130,11 @@ This project is actively being enhanced with professional-grade features. Check 
 
 ### 🎯 Top 5 Upcoming Features
 
-1. **Notification System** - Proactive alerts for network changes
-2. **Historical Analytics** - Track device behavior over time
-3. **Device Management** - Tags, groups, and custom organization
-4. **Enhanced Dashboard** - Real-time updates via WebSocket, dark mode
-5. **Vulnerability Detection** - Security scanning and recommendations
+1. **Notification System** - ✅ Complete
+2. **Historical Analytics** - ✅ Complete
+3. **Device Management** - ✅ Complete
+4. **Enhanced Dashboard** - ✅ Complete
+5. **Vulnerability Detection** - ✅ Complete
 
 **Total estimated development time**: 51-77 hours
 

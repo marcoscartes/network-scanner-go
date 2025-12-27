@@ -137,7 +137,7 @@ Este plan detalla la implementación de las 5 funcionalidades más impactantes:
 - [x] Añadir campo `CustomName` (string)
 - [x] Añadir campo `Notes` (string)
 - [x] Añadir campo `Tags` ([]string - JSON)
-- [ ] Añadir campo `Group` (string)
+- [x] Añadir campo `Group` (string)
 - [x] Añadir campo `IsKnown` (bool)
 - [x] Migrar base de datos para añadir nuevas columnas
 
@@ -269,34 +269,34 @@ go get github.com/jung-kurt/gofpdf  # Para reportes PDF (opcional)
 ## ✅ Criterios de Éxito
 
 ### Fase 1 - Notificaciones
-- [ ] Se detectan y notifican nuevos dispositivos
-- [ ] Se detectan dispositivos desconectados
-- [ ] Se detectan cambios en puertos
-- [ ] Al menos 2 canales de notificación funcionando
+- [x] Se detectan y notifican nuevos dispositivos
+- [x] Se detectan dispositivos desconectados
+- [x] Se detectan cambios en puertos
+- [x] Al menos 2 canales de notificación funcionando
 
 ### Fase 2 - Historial
-- [ ] Se registra el histórico de todos los cambios
-- [ ] Se pueden consultar estadísticas de los últimos 90 días
-- [ ] Dashboard muestra gráficas temporales
-- [ ] Se calcula uptime correctamente
+- [x] Se registra el histórico de todos los cambios
+- [x] Se pueden consultar estadísticas de los últimos 90 días
+- [x] Dashboard muestra gráficas temporales
+- [x] Se calcula uptime correctamente
 
 ### Fase 3 - Gestión
-- [ ] Se pueden añadir nombres personalizados
-- [ ] Sistema de tags funcional
-- [ ] Grupos con asignación automática
-- [ ] Exportación/importación funcional
+- [x] Se pueden añadir nombres personalizados
+- [x] Sistema de tags funcional
+- [x] Grupos con asignación automática
+- [x] Exportación/importación funcional
 
 ### Fase 4 - Dashboard
-- [ ] Actualización en tiempo real vía WebSocket
-- [ ] Búsqueda avanzada funcional
-- [ ] Tema oscuro implementado
-- [ ] Responsive en móviles
+- [x] Actualización en tiempo real vía WebSocket
+- [x] Búsqueda avanzada funcional
+- [x] Tema oscuro implementado
+- [x] Responsive en móviles
 
 ### Fase 5 - Seguridad
-- [ ] Se detectan al menos 10 tipos de vulnerabilidades
-- [ ] Se generan recomendaciones útiles
-- [ ] Dashboard de seguridad funcional
-- [ ] Reportes exportables
+- [x] Se detectan al menos 10 tipos de vulnerabilidades
+- [x] Se generan recomendaciones útiles
+- [x] Dashboard de seguridad funcional
+- [x] Reportes exportables
 
 ---
 

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-27
+
+### Added
+- **Vulnerability Intelligence**: Added actionable "Fix" instructions and "Learn More" external links for all detected vulnerabilities.
+- **Interactive Security UI**: Vulnerability badges are now clickable, opening a detailed modal with remediation steps.
+- **Improved Code Structure**: Separated CSS into a standalone file (`internal/web/static/css/style.css`) for better maintainability and performance.
+
+### Changed
+- **Enhanced Icons**: Added bi-icons for various UI elements and improved contrast in dark mode.
+- **Better UX**: Replaced inline styles with a structured CSS class system.
+- **Security Knowledge Base**: Enriched `configs/security_rules.json` with detailed severity descriptions and remediation URLs.
+
+### Fixed
+- Fixed broken HTML tags in device tag rendering.
+- Improved responsiveness of Chart.js elements.
+
 ## [0.4.0] - 2025-12-26
 
 ### Added
