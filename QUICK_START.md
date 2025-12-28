@@ -1,264 +1,167 @@
 # 📋 Network Scanner - Quick Start Guide
 
-**Fecha**: 2025-12-19  
-**Versión**: 1.2.0  
-**Estado**: Proyecto Finalizado - Producción
+**Date**: 2025-12-28  
+**Version**: 2.0.0  
+**Status**: Production Ready
 
 ---
 
-## 🎯 Objetivo
+## 🎯 Objective
 
-Transformar el network scanner básico en una herramienta profesional de monitoreo y seguridad de red con las siguientes capacidades:
+Transform the basic network scanner into a professional network monitoring and security tool with the following capabilities:
 
-1. ✅ **Notificaciones proactivas** de cambios en la red
-2. ✅ **Análisis histórico** y estadísticas temporales
-3. ✅ **Gestión avanzada** de dispositivos con etiquetas y grupos
-4. ✅ **Dashboard moderno** con actualización en tiempo real
-5. ✅ **Detección de vulnerabilidades** y recomendaciones de seguridad
-
----
-
-## 📚 Documentos del Proyecto
-
-| Documento | Propósito | Cuándo usarlo |
-|-----------|-----------|---------------|
-| `IMPLEMENTATION_PLAN.md` | Plan detallado de las 5 fases prioritarias | Durante el desarrollo del Top 5 |
-| `NEXT_STEPS.md` | Roadmap de funcionalidades post Top 5 | Después de completar las 5 fases |
-| `QUICK_START.md` (este archivo) | Resumen ejecutivo y checklist | Referencia rápida |
+1. ✅ **Proactive notifications** of network changes
+2. ✅ **Historical analysis** and temporal statistics
+3. ✅ **Advanced device management** with tags and groups
+4. ✅ **Modern dashboard** with real-time updates
+5. ✅ **Vulnerability detection** and security recommendations
 
 ---
 
-## ⚡ Checklist de Implementación
+## 🚀 Quick Start
 
-### ✅ Preparación (Antes de empezar)
-- [ ] Leer `IMPLEMENTATION_PLAN.md` completo
-- [ ] Hacer backup de la base de datos actual
-- [ ] Crear rama de desarrollo: `git checkout -b feature/top5-implementation`
-- [ ] Configurar entorno de desarrollo
-- [ ] Revisar dependencias actuales
+### 1. Build the Scanner
 
----
-
-### 📢 Fase 1: Sistema de Notificaciones (9-14 horas)
-
-**Objetivo**: Detectar y notificar cambios en la red automáticamente
-
-#### Checklist
-- [ ] **1.1** Crear modelos `Notification` y `NotificationConfig`
-- [ ] **1.2** Implementar detector de cambios (`detector.go`)
-- [ ] **1.3** Crear sistema de notificadores (`notifier.go`, `manager.go`)
-- [ ] **1.4** Integrar con el scanner principal
-- [ ] **1.5** Añadir API y UI para notificaciones
-
-#### Criterios de Éxito
-- [ ] Detecta nuevos dispositivos
-- [ ] Detecta dispositivos desconectados
-- [ ] Detecta cambios en puertos
-- [ ] Al menos 2 canales funcionando (consola + webhook)
-
-#### Comandos
 ```bash
-# Crear archivos
-mkdir -p internal/notifications
-touch internal/notifications/detector.go
-touch internal/notifications/notifier.go
-touch internal/notifications/manager.go
+# Using build script (Windows)
+scripts\build.bat
 
-# Probar
+# Or manually
+go mod tidy
 go build -o scanner.exe cmd/scanner/main.go
-./scanner.exe -notify-new-devices -notify-port-changes
 ```
 
----
+### 2. Run the Scanner
 
-### 📊 Fase 2: Historial y Estadísticas (10-15 horas)
-
-**Objetivo**: Registrar histórico y generar estadísticas útiles
-
-#### Checklist
-- [ ] **2.1** Crear modelos `DeviceHistory` y `NetworkStats`
-- [ ] **2.2** Implementar sistema de registro (`recorder.go`, `analyzer.go`)
-- [ ] **2.3** Integrar con scanner para guardar snapshots
-- [ ] **2.4** Crear API de estadísticas
-- [ ] **2.5** Añadir gráficas al dashboard
-
-#### Criterios de Éxito
-- [ ] Se registra histórico de cambios
-- [ ] Estadísticas de 90 días disponibles
-- [ ] Dashboard muestra gráficas temporales
-- [ ] Cálculo de uptime funcional
-
-#### Comandos
 ```bash
-# Crear archivos
-mkdir -p internal/history
-touch internal/history/recorder.go
-touch internal/history/analyzer.go
+# Auto-detect network and start scanning
+.\scanner.exe
 
-# Instalar Chart.js (añadir a index.html)
-# <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+# Or use the interactive menu
+scripts\menu.bat
 ```
+
+### 3. Access the Dashboard
+
+Open your browser: `http://localhost:5050`
 
 ---
 
-### 🏷️ Fase 3: Gestión de Dispositivos (9-14 horas)
+## 📚 Project Documents
 
-**Objetivo**: Permitir personalización y organización de dispositivos
-
-#### Checklist
-- [ ] **3.1** Extender modelo `Device` con campos personalizados
-- [ ] **3.2** Implementar lógica de gestión (`device_manager.go`, `groups.go`)
-- [ ] **3.3** Crear API de gestión
-- [ ] **3.4** Añadir UI de gestión al dashboard
-- [ ] **3.5** Implementar importación/exportación
-
-#### Criterios de Éxito
-- [ ] Nombres personalizados funcionan
-- [ ] Sistema de tags operativo
-- [ ] Grupos con asignación automática
-- [ ] Exportación a JSON/CSV funcional
-
-#### Comandos
-```bash
-# Crear archivos
-mkdir -p internal/management
-touch internal/management/device_manager.go
-touch internal/management/groups.go
-touch internal/management/import_export.go
-
-# Migrar base de datos
-# ALTER TABLE devices ADD COLUMN custom_name TEXT;
-# ALTER TABLE devices ADD COLUMN notes TEXT;
-# ALTER TABLE devices ADD COLUMN tags TEXT;
-# ALTER TABLE devices ADD COLUMN group_name TEXT;
-# ALTER TABLE devices ADD COLUMN is_favorite BOOLEAN DEFAULT 0;
-```
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| `planning/IMPLEMENTATION_PLAN.md` | Detailed plan for the 5 priority phases | During Top 5 development |
+| `planning/NEXT_STEPS.md` | Post Top 5 features roadmap | After completing the 5 phases |
+| `QUICK_START.md` (this file) | Executive summary and checklist | Quick reference |
+| `docs/USER_GUIDE.md` | Complete user manual | For detailed usage |
+| `docs/API_REFERENCE.md` | API documentation | For developers |
 
 ---
 
-### 🎨 Fase 4: Dashboard Mejorado (11-16 horas)
+## ⚡ Implementation Checklist
 
-**Objetivo**: Mejorar UX con tiempo real y búsqueda avanzada
-
-#### Checklist
-- [ ] **4.1** Implementar WebSockets (`websocket.go`)
-- [ ] **4.2** Crear búsqueda avanzada (`query_parser.go`)
-- [ ] **4.3** Implementar tema oscuro y mejoras visuales
-- [ ] **4.4** Añadir widgets de estadísticas
-- [ ] **4.5** Optimizar para móviles
-
-#### Criterios de Éxito
-- [ ] Actualización en tiempo real funciona
-- [ ] Búsqueda avanzada operativa
-- [ ] Tema oscuro implementado
-- [ ] Responsive en móviles
-
-#### Comandos
-```bash
-# Instalar dependencia
-go get github.com/gorilla/websocket
-
-# Crear archivos
-touch internal/web/websocket.go
-mkdir -p internal/search
-touch internal/search/query_parser.go
-```
+### ✅ Preparation (Before Starting)
+- [x] Read `planning/IMPLEMENTATION_PLAN.md` completely
+- [x] Backup current database
+- [x] Create development branch: `git checkout -b feature/top5-implementation`
+- [x] Configure development environment
+- [x] Review current dependencies
 
 ---
 
-### 🔒 Fase 5: Detección de Vulnerabilidades (12-18 horas)
+### 📢 Phase 1: Notification System (9-14 hours) ✅ COMPLETE
 
-**Objetivo**: Identificar problemas de seguridad y generar recomendaciones
+**Objective**: Automatically detect and notify network changes
 
-#### Checklist
-- [ ] **5.1** Crear base de conocimiento (`vulnerability_db.go`)
-- [ ] **5.2** Implementar motor de análisis (`scanner.go`)
-- [ ] **5.3** Integrar con scanner principal
-- [ ] **5.4** Crear tabla de findings en BD
-- [ ] **5.5** Añadir API y dashboard de seguridad
-- [ ] **5.6** Implementar reportes de seguridad
-
-#### Criterios de Éxito
-- [ ] Detecta 10+ tipos de vulnerabilidades
-- [ ] Genera recomendaciones útiles
-- [ ] Dashboard de seguridad funcional
-- [ ] Reportes exportables (PDF/HTML)
-
-#### Comandos
-```bash
-# Crear archivos
-mkdir -p internal/security
-touch internal/security/vulnerability_db.go
-touch internal/security/scanner.go
-touch internal/security/reporter.go
-touch configs/security_rules.json
-
-# Opcional: Para reportes PDF
-go get github.com/jung-kurt/gofpdf
-```
+#### Success Criteria
+- [x] Detects new devices
+- [x] Detects disconnected devices
+- [x] Detects port changes
+- [x] At least 2 notification channels working (Console, System, Webhook)
 
 ---
 
-## 🔄 Flujo de Trabajo Recomendado
+### 📊 Phase 2: History & Statistics (10-15 hours) ✅ COMPLETE
 
-### Para cada fase:
+**Objective**: Record history and generate useful statistics
 
-1. **Planificación** (30 min)
-   - Leer sección completa en `IMPLEMENTATION_PLAN.md`
-   - Entender objetivos y criterios de éxito
-   - Preparar archivos y estructura
-
-2. **Implementación** (80% del tiempo)
-   - Seguir checklist de tareas
-   - Commit frecuentes con mensajes descriptivos
-   - Probar cada componente individualmente
-
-3. **Integración** (10% del tiempo)
-   - Integrar con código existente
-   - Probar flujo completo
-   - Ajustar según sea necesario
-
-4. **Documentación** (10% del tiempo)
-   - Actualizar README.md
-   - Documentar nuevos endpoints
-   - Añadir comentarios en código complejo
-
-5. **Testing** (antes de siguiente fase)
-   - Verificar todos los criterios de éxito
-   - Testing manual del dashboard
-   - Probar casos edge
+#### Success Criteria
+- [x] Change history is recorded
+- [x] 90-day statistics available
+- [x] Dashboard shows temporal charts
+- [x] Uptime calculation works
 
 ---
 
-## 📊 Progreso General
+### 🏷️ Phase 3: Device Management (9-14 hours) ✅ COMPLETE
 
-### Estado Actual
-```
-Fase 1: [x] Notificaciones          5/5 tareas ✅
-Fase 2: [x] Historial               5/5 tareas ✅
-Fase 3: [x] Gestión                 5/5 tareas ✅
-Fase 4: [x] Dashboard               5/5 tareas ✅
-Fase 5: [x] Seguridad               6/6 tareas ✅
+**Objective**: Allow device customization and organization
 
-Progreso total: 26/26 tareas (100%)
-```
-
-### Tiempo Estimado
-- **Mínimo**: 51 horas (~1.5 meses a tiempo parcial)
-- **Máximo**: 77 horas (~2 meses a tiempo parcial)
-- **Promedio**: 64 horas
+#### Success Criteria
+- [x] Custom names work
+- [x] Tag system operational
+- [x] Groups with automatic assignment
+- [x] JSON/CSV export functional
 
 ---
 
-## 🛠️ Comandos Útiles
+### 🎨 Phase 4: Enhanced Dashboard (11-16 hours) ✅ COMPLETE
 
-### Desarrollo
+**Objective**: Improve UX with real-time and advanced search
+
+#### Success Criteria
+- [x] Real-time updates work
+- [x] Advanced search operational
+- [x] Dark mode implemented
+- [x] Mobile responsive
+
+---
+
+### 🔒 Phase 5: Vulnerability Detection (12-18 hours) ✅ COMPLETE
+
+**Objective**: Identify security issues and generate recommendations
+
+#### Success Criteria
+- [x] Detects 10+ vulnerability types
+- [x] Generates useful recommendations
+- [x] Security dashboard functional
+- [x] Exportable reports (PDF/HTML)
+
+---
+
+## 📊 Overall Progress
+
+### Current Status
+```
+Phase 1: [x] Notifications          5/5 tasks ✅
+Phase 2: [x] History                5/5 tasks ✅
+Phase 3: [x] Management             5/5 tasks ✅
+Phase 4: [x] Dashboard              5/5 tasks ✅
+Phase 5: [x] Security               6/6 tasks ✅
+
+Total progress: 26/26 tasks (100%)
+```
+
+### Time Spent
+- **Minimum**: 51 hours
+- **Maximum**: 77 hours
+- **Actual**: 56 hours
+
+---
+
+## 🛠️ Useful Commands
+
+### Development
 ```bash
 # Build
 go build -o scanner.exe cmd/scanner/main.go
 
-# Run con flags
-./scanner.exe -range 192.168.1.0/24 -interval 60 -web-port 5050
+# Build optimized (production)
+go build -ldflags="-s -w" -o scanner.exe cmd/scanner/main.go
+
+# Run with flags
+.\scanner.exe -range 192.168.1.0/24 -interval 60 -web-port 5050
 
 # Tests
 go test ./...
@@ -266,22 +169,37 @@ go test ./...
 # Coverage
 go test -cover ./...
 
-# Linting
-golangci-lint run
-
 # Format
 go fmt ./...
 ```
 
-### Base de Datos
+### Using Scripts
 ```bash
-# Abrir SQLite
+# Interactive menu
+scripts\menu.bat
+
+# Quick build
+scripts\build.bat
+
+# Advanced build options
+scripts\build-advanced.bat
+
+# Run with options
+scripts\run.bat
+
+# Clean files
+scripts\clean.bat
+```
+
+### Database
+```bash
+# Open SQLite
 sqlite3 scanner.db
 
-# Ver tablas
+# View tables
 .tables
 
-# Ver schema
+# View schema
 .schema devices
 
 # Backup
@@ -293,99 +211,132 @@ cp scanner.db.backup scanner.db
 
 ### Git
 ```bash
-# Crear rama
-git checkout -b feature/phase1-notifications
+# Create branch
+git checkout -b feature/new-feature
 
 # Commit
 git add .
-git commit -m "feat: implement notification system"
+git commit -m "feat: implement new feature"
 
 # Push
-git push origin feature/phase1-notifications
+git push origin feature/new-feature
 
-# Merge a main
+# Merge to main
 git checkout main
-git merge feature/phase1-notifications
+git merge feature/new-feature
 ```
 
 ---
 
 ## 🚨 Troubleshooting
 
-### Problema: Build falla
+### Problem: Build fails
 ```bash
-# Limpiar módulos
+# Clean modules
 go clean -modcache
 go mod tidy
 go mod download
 ```
 
-### Problema: Base de datos bloqueada
+### Problem: Database locked
 ```bash
-# Cerrar todas las conexiones
-# Reiniciar scanner
-# Verificar que no hay múltiples instancias corriendo
+# Close all connections
+# Restart scanner
+# Verify no multiple instances running
 ```
 
-### Problema: Puerto 5050 en uso
+### Problem: Port 5050 in use
 ```bash
-# Windows: Ver qué usa el puerto
+# Windows: See what's using the port
 netstat -ano | findstr :5050
 
-# Matar proceso
+# Kill process
 taskkill /PID <PID> /F
 
-# O usar otro puerto
-./scanner.exe -web-port 8080
+# Or use another port
+.\scanner.exe -web-port 8080
 ```
 
----
-
-## 📈 Métricas de Éxito
-
-Al finalizar las 5 fases, deberías tener:
-
-- ✅ **3 tipos de notificaciones** funcionando
-- ✅ **Histórico de 90 días** almacenado
-- ✅ **5+ estadísticas** visualizadas
-- ✅ **Sistema de tags y grupos** operativo
-- ✅ **Actualización en tiempo real** vía WebSocket
-- ✅ **10+ vulnerabilidades** detectables
-- ✅ **Reportes exportables** en 2+ formatos
-- ✅ **Dashboard responsive** con tema oscuro
-- ✅ **API REST** con 15+ endpoints
-- ✅ **Documentación actualizada**
-
----
-
-## 🎯 Siguiente Paso
-
-**¡Empieza ahora!**
-
-1. Abre `IMPLEMENTATION_PLAN.md`
-2. Lee la **Fase 1: Sistema de Notificaciones**
-3. Crea la rama de desarrollo
-4. ¡Comienza a codificar!
-
+### Problem: Scanner not finding devices
 ```bash
-git checkout -b feature/top5-implementation
-mkdir -p internal/notifications
-code internal/notifications/detector.go
+# Run as administrator
+# Specify network range manually
+.\scanner.exe -range 192.168.1.0/24
 ```
 
 ---
 
-## 💡 Consejos Finales
+## 📈 Success Metrics
 
-1. **No te saltes fases** - Cada una construye sobre la anterior
-2. **Commit frecuentemente** - Pequeños commits son mejores
-3. **Prueba constantemente** - No esperes al final
-4. **Documenta mientras codificas** - Es más fácil que al final
-5. **Pide ayuda si te atascas** - No pierdas tiempo bloqueado
-6. **Celebra los hitos** - Cada fase completada es un logro
+Upon completing the 5 phases, you should have:
+
+- ✅ **3 notification types** working
+- ✅ **90-day history** stored
+- ✅ **5+ statistics** visualized
+- ✅ **Tag and group system** operational
+- ✅ **Real-time updates** via WebSocket
+- ✅ **10+ vulnerabilities** detectable
+- ✅ **Exportable reports** in 2+ formats
+- ✅ **Responsive dashboard** with dark mode
+- ✅ **REST API** with 15+ endpoints
+- ✅ **Updated documentation**
 
 ---
 
-**¡Buena suerte! 🚀**
+## 🎯 Next Steps
 
-Si tienes dudas, consulta los documentos detallados o pide ayuda.
+### For New Users
+
+1. **Read the documentation**
+   - [User Guide](docs/USER_GUIDE.md) - Complete manual
+   - [FAQ](docs/FAQ.md) - Frequently asked questions
+   - [API Reference](docs/API_REFERENCE.md) - API documentation
+
+2. **Explore the dashboard**
+   - View discovered devices
+   - Try advanced search
+   - Customize device names and tags
+   - Check security vulnerabilities
+
+3. **Configure notifications**
+   - Set up notification preferences
+   - Test notification channels
+   - Monitor network changes
+
+### For Developers
+
+1. **Review the architecture**
+   - [Architecture](docs/ARCHITECTURE.md) - System design
+   - [Repository Structure](REPOSITORY_STRUCTURE.md) - Project organization
+
+2. **Contribute**
+   - Check [planning/NEXT_STEPS.md](planning/NEXT_STEPS.md) for future features
+   - Review [planning/IMPLEMENTATION_PLAN.md](planning/IMPLEMENTATION_PLAN.md) for completed work
+
+---
+
+## 💡 Final Tips
+
+1. **Don't skip phases** - Each builds upon the previous
+2. **Commit frequently** - Small commits are better
+3. **Test constantly** - Don't wait until the end
+4. **Document while coding** - It's easier than at the end
+5. **Ask for help if stuck** - Don't waste time blocked
+6. **Celebrate milestones** - Each completed phase is an achievement
+
+---
+
+## 📞 Support
+
+- **Documentation**: [docs/](docs/)
+- **FAQ**: [docs/FAQ.md](docs/FAQ.md)
+- **Issues**: [GitHub Issues](https://github.com/your-username/network-scanner-go/issues)
+
+---
+
+**Good luck! 🚀**
+
+If you have questions, consult the detailed documents or ask for help.
+
+**Version**: 2.0.0  
+**Last Updated**: 2025-12-28

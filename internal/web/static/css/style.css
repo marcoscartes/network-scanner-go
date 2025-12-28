@@ -170,6 +170,19 @@ body {
     cursor: pointer;
 }
 
+/* Port badge styling */
+.port-badge {
+    transition: all 0.2s ease;
+    cursor: help !important;
+}
+
+.port-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(35, 134, 54, 0.4);
+    filter: brightness(1.2);
+}
+
+
 
 /* Notifications Sidebar */
 .notifications-sidebar {

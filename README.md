@@ -2,7 +2,7 @@
 
 A high-performance network scanner written in Go that discovers devices on your local network, scans ports, identifies device types, and provides a web dashboard for monitoring.
 
-## Features
+## ✨ Features
 
 - **Network Discovery**: Automatic device discovery using ping
 - **Port Scanning**: Scans common ports and supports full port scans (1-65535)
@@ -10,6 +10,7 @@ A high-performance network scanner written in Go that discovers devices on your 
 - **MAC Vendor Lookup**: Resolves device manufacturers
 - **Metrics Detection**: Finds Prometheus metrics endpoints
 - **Security Auditing**: Detects vulnerable services with remediation guides and official documentation links
+- **Port Information Tooltips**: Interactive tooltips showing detailed information about 80+ common ports
 - **Web Dashboard**: Modern real-time interface with dark/light mode and WebSocket updates
 - **Historical Trends**: Tracks device uptime and network growth with interactive charts
 - **Device Management**: Advanced organization with custom naming, tags, and groups
@@ -18,22 +19,99 @@ A high-performance network scanner written in Go that discovers devices on your 
 - **SQLite Database**: Core persistent storage with WAL mode for high concurrency
 - **Concurrent Scanning**: Fast parallel scanning using goroutine pools
 
-## Installation
+---
+
+## 🚀 Quick Start
+
+### 1. Build
+
+```bash
+# Using build script (Windows)
+scripts\build.bat
+
+# Or manually
+go mod tidy
+go build -o scanner.exe cmd/scanner/main.go
+```
+
+### 2. Run
+
+```bash
+# Auto-detect network and start scanning
+.\scanner.exe
+
+# Or use the interactive menu
+scripts\menu.bat
+```
+
+### 3. Access Dashboard
+
+Open your browser: `http://localhost:5050`
+
+**For detailed instructions**, see [QUICK_START.md](QUICK_START.md)
+
+---
+
+## 📚 Documentation
+
+### For Users
+- **[Quick Start Guide](QUICK_START.md)** - Get started in 5 minutes
+- **[User Guide](docs/USER_GUIDE.md)** - Complete user manual
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions (54+)
+
+### For Developers
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and components
+- **[API Reference](docs/API_REFERENCE.md)** - REST API documentation
+- **[Documentation Index](docs/INDEX.md)** - All documentation
+
+### Build & Run
+- **[Scripts Guide](scripts/README.md)** - Build and run scripts
+- **[Repository Structure](REPOSITORY_STRUCTURE.md)** - Project organization
+
+### Planning
+- **[Implementation Plan](planning/IMPLEMENTATION_PLAN.md)** - Completed features (Phases 1-5)
+- **[Progress Tracking](planning/PROGRESS.md)** - Development progress
+- **[Next Steps](planning/NEXT_STEPS.md)** - Future enhancements (20+ features)
+- **[Visual Roadmap](planning/ROADMAP_VISUAL.md)** - Project roadmap
+
+---
+
+## 💻 Installation
 
 ### Prerequisites
 
 - Go 1.20 or higher
 - Windows, Linux, or macOS
 
-### Build
+### Build Options
 
+**Option 1: Using Scripts (Recommended for Windows)**
+```bash
+# Interactive menu with all options
+scripts\menu.bat
+
+# Quick build
+scripts\build.bat
+
+# Advanced build (optimized, debug, etc.)
+scripts\build-advanced.bat
+```
+
+**Option 2: Manual Build**
 ```bash
 cd network-scanner-go
 go mod tidy
 go build -o scanner.exe cmd/scanner/main.go
 ```
 
-## Usage
+**Option 3: Optimized Build (Production)**
+```bash
+go build -ldflags="-s -w" -o scanner.exe cmd/scanner/main.go
+```
+
+---
+
+## 🎮 Usage
 
 ### Basic Usage
 
@@ -60,8 +138,24 @@ go build -o scanner.exe cmd/scanner/main.go
 - `-interval` - Scan interval in seconds (default: 60)
 - `-web-port` - Web interface port (default: 5050)
 - `-db` - Database file path (default: scanner.db)
+- `-history-retention-days` - Days to keep history (default: 90)
 
-## Web Dashboard
+### Using Scripts
+
+```bash
+# Interactive menu with all options
+scripts\menu.bat
+
+# Run with custom options
+scripts\run.bat
+
+# Clean compiled files
+scripts\clean.bat
+```
+
+---
+
+## 🖥️ Web Dashboard
 
 Access the dashboard at: `http://localhost:5050`
 
@@ -70,10 +164,14 @@ Access the dashboard at: `http://localhost:5050`
 - View all discovered devices
 - Sort by any column
 - Click port numbers to open services
+- **Hover over ports** to see detailed service information
 - Full port scan with progress tracking
 - **Interactive Security**: Click vulnerability badges to see "How to Fix"
 - **Historical Charts**: Network activity and device distribution
 - **Real-time**: Instant updates via WebSockets and Live indicators
+- **Search**: Advanced search with filters (type:, port:, group:, tag:)
+- **Manage**: Custom names, tags, groups, and notes
+- **Export/Import**: Backup and restore device data
 
 ### Full Port Scan
 
@@ -82,27 +180,64 @@ Access the dashboard at: `http://localhost:5050`
 3. Watch real-time progress
 4. View all discovered ports
 
-## Architecture
+---
+
+## 📁 Project Structure
 
 ```
 network-scanner-go/
-├── cmd/scanner/          # Main application
-├── internal/
-│   ├── database/        # SQLite operations
-│   ├── scanner/         # Network scanning logic
-│   ├── vendor/          # MAC vendor lookup
-│   └── web/             # HTTP server & templates
-└── scanner.db           # SQLite database (created on first run)
+├── README.md                   # This file
+├── QUICK_START.md              # Quick start guide
+├── CHANGELOG.md                # Version history
+│
+├── scripts/                    # Build and run scripts
+│   ├── menu.bat                # Interactive menu
+│   ├── build.bat               # Simple build
+│   ├── build-advanced.bat      # Advanced build options
+│   ├── run.bat                 # Run with options
+│   └── clean.bat               # Clean files
+│
+├── planning/                   # Project planning
+│   ├── IMPLEMENTATION_PLAN.md  # Completed features
+│   ├── PROGRESS.md             # Progress tracking
+│   ├── NEXT_STEPS.md           # Future features
+│   └── ROADMAP_VISUAL.md       # Visual roadmap
+│
+├── docs/                       # Documentation
+│   ├── USER_GUIDE.md           # Complete user guide
+│   ├── API_REFERENCE.md        # API documentation
+│   ├── ARCHITECTURE.md         # System architecture
+│   └── FAQ.md                  # Frequently asked questions
+│
+├── cmd/scanner/                # Main application
+├── internal/                   # Internal packages
+│   ├── database/               # SQLite operations
+│   ├── scanner/                # Network scanning
+│   ├── web/                    # HTTP server
+│   ├── notifications/          # Notification system
+│   ├── security/               # Security scanning
+│   ├── history/                # Historical analytics
+│   └── ...
+│
+├── configs/                    # Configuration files
+└── scanner.db                  # SQLite database (created on first run)
 ```
 
-## Performance
+For detailed structure, see [REPOSITORY_STRUCTURE.md](REPOSITORY_STRUCTURE.md)
+
+---
+
+## ⚡ Performance
 
 - Concurrent scanning with goroutine pools
 - Efficient port scanning with configurable timeouts
-- Low memory footprint
+- Low memory footprint (~20-50 MB)
 - Single binary deployment
+- SQLite with WAL mode for high concurrency
 
-## Comparison with Python Version
+---
+
+## 🆚 Comparison with Python Version
 
 **Advantages:**
 - ✅ 5-10x faster scanning
@@ -120,15 +255,11 @@ network-scanner-go/
 - ✅ SQLite database
 - ✅ Metrics detection
 
-## 🚀 Roadmap & Development
+---
 
-This project is actively being enhanced with professional-grade features. Check out our development plans:
+## 🎯 Development Status
 
-- **[QUICK_START.md](QUICK_START.md)** - Quick reference guide with checklists
-- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Detailed plan for Top 5 priority features
-- **[NEXT_STEPS.md](NEXT_STEPS.md)** - Future enhancements roadmap
-
-### 🎯 Top 5 Upcoming Features
+### ✅ Completed Features (Phases 1-5)
 
 1. **Notification System** - ✅ Complete
 2. **Historical Analytics** - ✅ Complete
@@ -136,11 +267,45 @@ This project is actively being enhanced with professional-grade features. Check 
 4. **Enhanced Dashboard** - ✅ Complete
 5. **Vulnerability Detection** - ✅ Complete
 
-**Total estimated development time**: 51-77 hours
+**Total development time**: 56 hours
 
-See `IMPLEMENTATION_PLAN.md` for detailed breakdown and `NEXT_STEPS.md` for 20+ additional features planned.
+### 🔮 Upcoming Features (Phase 6+)
 
-## License
+See [planning/NEXT_STEPS.md](planning/NEXT_STEPS.md) for 20+ planned features including:
+- Authentication & Authorization
+- Email notifications
+- Prometheus/Grafana integration
+- Network topology mapping
+- And much more...
 
-MIT License
+---
 
+## 🤝 Contributing
+
+Contributions are welcome! Please see:
+- [planning/IMPLEMENTATION_PLAN.md](planning/IMPLEMENTATION_PLAN.md) - Completed work
+- [planning/NEXT_STEPS.md](planning/NEXT_STEPS.md) - Future features
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System design
+
+---
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) for details
+
+---
+
+## 🆘 Support
+
+- **Documentation**: [docs/](docs/)
+- **FAQ**: [docs/FAQ.md](docs/FAQ.md)
+- **Issues**: [GitHub Issues](https://github.com/your-username/network-scanner-go/issues)
+
+---
+
+## 🌟 Acknowledgments
+
+Built with Go, SQLite, Bootstrap, and Chart.js
+
+**Version**: 2.0.0  
+**Last Updated**: 2025-12-28

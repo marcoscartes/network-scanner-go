@@ -27,6 +27,21 @@ func Init(dbPath string) error {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 
+	// Configure SQLite for better concurrency
+	// WAL mode allows multiple readers and one writer concurrently
+	if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
+		log.Printf("Warning: failed to enable WAL mode: %v", err)
+	}
+	// busy_timeout makes SQLite wait for the specified time (5s) instead of failing immediately
+	if _, err := db.Exec("PRAGMA busy_timeout=5000;"); err != nil {
+		log.Printf("Warning: failed to set busy_timeout: %v", err)
+	}
+
+	// Limit connection pooling to avoid locking issues in some cases
+	db.SetMaxOpenConns(1) // Keep it to 1 writer if not using a more complex setup, but WAL helps
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(time.Hour)
+
 	// Create tables
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS devices (
@@ -93,6 +108,16 @@ func Init(dbPath string) error {
 			disconnected_devices INTEGER DEFAULT 0,
 			total_ports INTEGER DEFAULT 0,
 			active_devices INTEGER DEFAULT 0
+		);
+
+		CREATE TABLE IF NOT EXISTS cve_cache (
+			cve_id TEXT PRIMARY KEY,
+			description TEXT,
+			severity TEXT,
+			base_score REAL,
+			published_at TEXT,
+			last_modified TEXT,
+			cached_at INTEGER NOT NULL
 		);
 
 		CREATE INDEX IF NOT EXISTS idx_devices_ip ON devices(ip);
@@ -179,12 +204,12 @@ func GetAllDevices() ([]*Device, error) {
 		var device Device
 		var openPortsJSON, vulnerabilitiesJSON, metricsURLsJSON string
 		var tagsJSON sql.NullString
-		var customName, customType, notes sql.NullString
+		var customName, customType, notes, groupName sql.NullString
 		var lastSeenUnix int64
 		var firstSeenUnix sql.NullInt64
 
 		err := rows.Scan(&device.ID, &device.MAC, &device.IP, &customName, &device.Vendor,
-			&device.Type, &customType, &device.IsKnown, &tagsJSON, &notes, &openPortsJSON, &vulnerabilitiesJSON, &metricsURLsJSON, &lastSeenUnix, &firstSeenUnix, &device.GroupName)
+			&device.Type, &customType, &device.IsKnown, &tagsJSON, &notes, &openPortsJSON, &vulnerabilitiesJSON, &metricsURLsJSON, &lastSeenUnix, &firstSeenUnix, &groupName)
 		if err != nil {
 			continue
 		}
@@ -197,6 +222,9 @@ func GetAllDevices() ([]*Device, error) {
 		}
 		if notes.Valid {
 			device.Notes = notes.String
+		}
+		if groupName.Valid {
+			device.GroupName = groupName.String
 		}
 		if tagsJSON.Valid {
 			json.Unmarshal([]byte(tagsJSON.String), &device.Tags)
@@ -633,4 +661,46 @@ func GetDeviceUptime(mac string, period time.Duration) (float64, error) {
 
 	uptime := (float64(activeCount) / float64(totalCount)) * 100.0
 	return uptime, nil
+}
+
+// SaveCVECache saves a CVE to the cache
+func SaveCVECache(cveID, description, severity string, score float64, published, modified string) error {
+	dbMu.Lock()
+	defer dbMu.Unlock()
+
+	_, err := db.Exec(`
+		INSERT OR REPLACE INTO cve_cache (cve_id, description, severity, base_score, published_at, last_modified, cached_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, cveID, description, severity, score, published, modified, time.Now().Unix())
+	return err
+}
+
+// GetCVECache retrieves a CVE from the cache
+func GetCVECache(cveID string) (map[string]interface{}, bool) {
+	var description, severity, published, modified string
+	var score float64
+	var cachedAt int64
+
+	err := db.QueryRow(`
+		SELECT description, severity, base_score, published_at, last_modified, cached_at 
+		FROM cve_cache WHERE cve_id = ?
+	`, cveID).Scan(&description, &severity, &score, &published, &modified, &cachedAt)
+
+	if err != nil {
+		return nil, false
+	}
+
+	// Check if cache is older than 30 days
+	if time.Since(time.Unix(cachedAt, 0)) > 30*24*time.Hour {
+		return nil, false
+	}
+
+	return map[string]interface{}{
+		"cve_id":        cveID,
+		"description":   description,
+		"severity":      severity,
+		"base_score":    score,
+		"published_at":  published,
+		"last_modified": modified,
+	}, true
 }
