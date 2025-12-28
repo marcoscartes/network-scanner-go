@@ -1,5 +1,13 @@
 # Network Scanner (Go)
 
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://golang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/Version-2.0.0-blue.svg?style=flat-square)](https://github.com/marcoscartes/network-scanner-go/releases)
+[![AI Generated](https://img.shields.io/badge/AI%20Generated-100%25-blueviolet?style=flat-square&logo=openai)](https://openai.com/)
+
+> [!IMPORTANT]
+> **100% AI-Generated Code**: Every line of code, documentation, and logic in this repository was generated and architected by an Artificial Intelligence agent (Antigravity).
+
 A high-performance network scanner written in Go that discovers devices on your local network, scans ports, identifies device types, and provides a web dashboard for monitoring.
 
 ## ✨ Features
